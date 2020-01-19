@@ -1,14 +1,16 @@
-﻿# CMakeList.txt : Top-level CMake project file, do global configuration
-# and include sub-projects here.
-#
-cmake_minimum_required (VERSION 3.15)
-project ("plasma")
+﻿cmake_minimum_required (VERSION 3.15)
+project (plasma CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sbe)
-find_package(Java 1.8 COMPONENTS Runtime)
-SET(SBE_TOOL_JAVA_CMD ${Java_JAVA_EXECUTABLE})
-message(STATUS "JAVA_CMD=${SBE_TOOL_JAVA_CMD}")
+include(cmake/googletest.cmake)
+fetch_googletest(
+    ${PROJECT_SOURCE_DIR}/cmake
+    ${PROJECT_BINARY_DIR}/googletest
+    )
 
-# Include sub-projects.
-add_subdirectory ("sbe")
-add_subdirectory ("plasma")
+add_subdirectory (sbe)
+add_subdirectory (plasma)
+enable_testing()
+add_subdirectory (test)
