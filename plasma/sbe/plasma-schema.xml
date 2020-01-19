@@ -42,7 +42,7 @@
     <field name="symbol"  id="3" type="uint32" description="security to be traded"/>
     <field name="side"    id="4" type="Side" description="side of market"/>
     <field name="qty"     id="5" type="double" description="quantity to trade"/>
-    <field name="dest"    id="6" type="uint8" description="target id"/>
+    <field name="target"  id="6" type="uint8" description="target id"/>
   </message>
   <message name="OrderStatusRequest" id="2" description="Order Status Request">
     <field name="clOrdId" id="1" type="uint32" description="one byte source id, three byte seq id"/>
