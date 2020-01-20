@@ -8,7 +8,7 @@
 #include <plasma_client/FillReport.h>
 #include <plasma_client/DontKnowTrade.h>
 #include <iostream>
-
+#include "ICallback.h"
 using namespace plasma::client;
 namespace plasma
 {
@@ -32,9 +32,9 @@ namespace plasma
 		void OnMsg(const DontKnowTrade& rpt) {
 
 		}
-		void OnLogin() {
+		void OnLogin(ICallback& cb) {
 		}
-		void OnLogout() {
+		void OnLogout(ICallback& cb) {
 		}
 	};
 }

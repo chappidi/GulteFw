@@ -13,35 +13,53 @@ public:
 	// utility functions
 	auto get_nos(uint8_t tgt, double_t qty)
 	{
-		proxy::NewOrderSingle req(req_id++, tgt);
+		PROXY<NewOrderSingle> req;
+		req.clOrdId(req_id++);
+		req.target(tgt);
 		req.symbol(9999);
 		req.side(plasma::client::Side::BUY);
 		req.qty(qty);
 		return req;
 	}
-	auto get_cxl(uint32_t clOrdId, const proxy::NewOrderSingle& nos)
+	auto get_cxl(uint32_t clOrdId, const NewOrderSingle& nos)
 	{
-		proxy::OrderCancelRequest req(req_id++, nos);
+		PROXY<OrderCancelRequest> req;
+		req.clOrdId(req_id++);
+		req.origClOrdId(nos.clOrdId());
+		req.symbol(nos.symbol());
+		req.side(nos.side());
 		req.orderId(clOrdId);
 		return req;
 	}
-	auto get_rpl(uint32_t clOrdId, double_t qty, const proxy::NewOrderSingle& nos)
+	auto get_rpl(uint32_t clOrdId, double_t qty, const NewOrderSingle& nos)
 	{
-		proxy::OrderReplaceRequest req(req_id++, nos);
+		PROXY<OrderReplaceRequest> req;
+		req.clOrdId(req_id++);
+		req.origClOrdId(nos.clOrdId());
+		req.symbol(nos.symbol());
+		req.side(nos.side());
 		req.orderId(clOrdId);
 		req.qty(qty);
 		return req;
 	}
-	auto get_sts(const proxy::NewOrderSingle& nos)
+	auto get_sts(const NewOrderSingle& nos)
 	{
-		proxy::OrderStatusRequest req(nos);
+		PROXY<OrderStatusRequest> req;
+		req.clOrdId(nos.clOrdId());
+		req.symbol(nos.symbol());
+		req.side(nos.side());
+		req.qty(nos.qty());
 		auto itr = _clt2ord.find(nos.clOrdId());
 		req.orderId((itr != _clt2ord.end()) ? itr->second : 0);
 		return req;
 	}
-	auto get_sts(const proxy::OrderReplaceRequest& orr)
+	auto get_sts(const OrderReplaceRequest& orr)
 	{
-		proxy::OrderStatusRequest req(orr);
+		PROXY<OrderStatusRequest> req;
+		req.clOrdId(orr.clOrdId());
+		req.symbol(orr.symbol());
+		req.side(orr.side());
+		req.qty(orr.qty());
 		auto itr = _clt2ord.find(orr.clOrdId());
 		req.orderId((itr != _clt2ord.end()) ? itr->second : 0);
 		return req;
@@ -51,25 +69,25 @@ public:
 class GUI final : public plasma::ICallback, public Source
 {
 	uint8_t id() { return ID; }
-	void OnMsg(const plasma::client::NewOrderSingle& req) {
+	void OnMsg(const NewOrderSingle& req) override {
 		// Never receives it
 	}
-	void OnMsg(const plasma::client::OrderCancelRequest& req) {
+	void OnMsg(const OrderCancelRequest& req) override {
 		// Never receives it
 	}
-	void OnMsg(const plasma::client::OrderReplaceRequest& req) {
+	void OnMsg(const OrderReplaceRequest& req) override {
 		// Never receives it
 	}
-	void OnMsg(const plasma::client::OrderStatusRequest& req) {
+	void OnMsg(const OrderStatusRequest& req) override {
 		// Never receives it
 	}
-	void OnMsg(const plasma::client::NonFillReport& rpt) {
+	void OnMsg(const NonFillReport& rpt) override {
 	}
-	void OnMsg(const plasma::client::FillReport& rpt) {
+	void OnMsg(const FillReport& rpt) override {
 	}
-	void OnMsg(const plasma::client::OrderCancelReject& rpt) {
+	void OnMsg(const OrderCancelReject& rpt) override {
 	}
-	void OnMsg(const plasma::client::DontKnowTrade& rpt) {
+	void OnMsg(const DontKnowTrade& rpt) override {
 		// Never receives it
 	}
 };
