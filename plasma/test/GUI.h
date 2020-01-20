@@ -1,6 +1,9 @@
 #pragma once
 #include "messages.h"
 #include "ICallback.h"
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <map>
 using namespace std;
 
@@ -82,10 +85,30 @@ class GUI final : public plasma::ICallback, public Source
 		// Never receives it
 	}
 	void OnMsg(const NonFillReport& rpt) override {
+		stringstream strm;
+		strm << "\tGUI:\tNTR[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
+		stringstream  sts;
+//		sts << toString(rpt._action) << " / " << toString(rpt.status());
+		stringstream  sQty;
+		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
+		//		std::cout << strm.str() << sQty.str() << std::endl;
+		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
 	}
 	void OnMsg(const FillReport& rpt) override {
+		stringstream strm;
+		strm << "\tGUI:\tTRD[" << ClientId(rpt.clOrdId()) << "/" << rpt.orderId() << "] ";
+		stringstream  sts;
+		sts << OrdStatus::c_str(rpt.status());
+		stringstream  sQty;
+		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
+		//		std::cout << strm.str() << std::endl;
+		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
+		stringstream strm;
+		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
+		strm << OrdStatus::c_str(rpt.status());
+		std::cout << strm.str() << std::endl;
 	}
 	void OnMsg(const DontKnowTrade& rpt) override {
 		// Never receives it

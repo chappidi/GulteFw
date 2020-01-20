@@ -1,6 +1,9 @@
 #pragma once
+#include <iostream>
+#include <sstream>
 #include "messages.h"
 #include "ICallback.h"
+using namespace std;
 
 struct Sink {
 	static const uint8_t ID = 9;
@@ -54,24 +57,37 @@ class EPA final : public plasma::ICallback, public Sink
 public:
 	uint8_t id() { return ID; }
 	void OnMsg(const NewOrderSingle& req) override {
-		// Never receives it
+		stringstream strm;
+		strm << "\tEPA:\tNOS[" << req.clOrdId() << "]";
+		std::cout << strm.str() << std::endl;
 	}
 	void OnMsg(const OrderCancelRequest& req) override {
-		// Never receives it
+		stringstream strm;
+		strm << "\tEPA:\tOCR[" << req.clOrdId() << "/" << req.origClOrdId() << "/" << req.orderId() << "]";
+		std::cout << strm.str() << std::endl;
 	}
 	void OnMsg(const OrderReplaceRequest& req) override {
-		// Never receives it
+		stringstream strm;
+		strm << "\tEPA:\tORR[" << req.clOrdId() << "/" << req.origClOrdId() << "/" << req.orderId() << "]";
+		std::cout << strm.str() << std::endl;
 	}
 	void OnMsg(const OrderStatusRequest& req) override {
-		// Never receives it
+		stringstream strm;
+		strm << "\tEPA:\tOSR[" << req.clOrdId() << "/ NA /" << req.orderId() << "]";
+		std::cout << strm.str() << std::endl;
 	}
 	void OnMsg(const NonFillReport& rpt) override {
+		// EPA sends it. does not receive it 
 	}
 	void OnMsg(const FillReport& rpt) override {
+		// EPA sends it. does not receive it 
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
+		// EPA sends it. does not receive it 
 	}
 	void OnMsg(const DontKnowTrade& rpt) override {
-		// Never receives it
+		stringstream strm;
+		strm << "\tEPA\tDKT[" << rpt.orderId() << "/" << rpt.execId() << "]";
+		std::cout << strm.str() << std::endl;
 	}
 };
