@@ -22,7 +22,9 @@ TEST_F(TestSuiteA1, test_nos_rjt) {
 
 TEST_F(TestSuiteA1, test_nos_pnd_new_rjt) {
 	auto nos = clt.get_nos(epa.id(), 10000);
+	std::cout << nos << std::endl;
 	auto sts = clt.get_sts(nos);
+	std::cout << sts << std::endl;
 	EXPECT_EQ(nos.clOrdId(), sts.clOrdId());
 	EXPECT_EQ(nos.symbol(), 9999);
 }

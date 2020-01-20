@@ -36,79 +36,81 @@
     </enum>
    </types>
 
-  <message name="NewOrderSingle" id="1" description="New Order Request">
-    <field name="parent"  id="1" type="uint32" description="plasma parent order id"/>
-    <field name="clOrdId" id="2" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="symbol"  id="3" type="uint32" description="security to be traded"/>
-    <field name="side"    id="4" type="Side" description="side of market"/>
-    <field name="qty"     id="5" type="double" description="quantity to trade"/>
-    <field name="target"  id="6" type="uint8" description="target id"/>
+  <message name="NewOrderSingle"      id="1" description="New Order Request">
+    <field name="parent"      id="1"  type="uint32" description="plasma parent order id"/>
+    <field name="clOrdId"     id="2"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="symbol"      id="3"  type="uint32" description="security to be traded"/>
+    <field name="side"        id="4"  type="Side"   description="side of market"/>
+    <field name="qty"         id="5"  type="double" description="quantity to trade"/>
+    <field name="target"      id="6"  type="uint8"  description="target id"/>
   </message>
-  <message name="OrderStatusRequest" id="2" description="Order Status Request">
-    <field name="clOrdId" id="1" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="orderId" id="2" type="uint32" description="plasma order id"/>
-    <field name="symbol"  id="3" type="uint32" description="security to be traded"/>
-    <field name="side"    id="4" type="Side" description="side of market"/>
-    <field name="qty"     id="5" type="double" description="quantity to trade"/>
+  <message name="OrderStatusRequest"  id="2" description="Order Status Request">
+    <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="orderId"     id="2"  type="uint32" description="plasma order id"/>
+    <field name="symbol"      id="3"  type="uint32" description="security to be traded"/>
+    <field name="side"        id="4"  type="Side"   description="side of market"/>
+    <field name="qty"         id="5"  type="double" description="quantity to trade"/>
   </message>
-  <message name="OrderCancelRequest" id="3" description="Order Cancel Request">
-    <field name="clOrdId"     id="1" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="origClOrdId" id="2" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="orderId"     id="3" type="uint32" description="plasma order id"/>
-    <field name="symbol"      id="4" type="uint32" description="security to be traded"/>
-    <field name="side"        id="5" type="Side" description="side of market"/>
-    <field name="qty"         id="6" type="double" description="quantity to trade"/>
+  <message name="OrderCancelRequest"  id="3" description="Order Cancel Request">
+    <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="origClOrdId" id="2"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="orderId"     id="3"  type="uint32" description="plasma order id"/>
+    <field name="symbol"      id="4"  type="uint32" description="security to be traded"/>
+    <field name="side"        id="5"  type="Side"   description="side of market"/>
+    <field name="qty"         id="6"  type="double" description="quantity to trade"/>
   </message>
   <message name="OrderReplaceRequest" id="4" description="Order Replace Request">
-    <field name="clOrdId"     id="1" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="origClOrdId" id="2" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="orderId"     id="3" type="uint32" description="plasma order id"/>
-    <field name="symbol"      id="4" type="uint32" description="security to be traded"/>
-    <field name="side"        id="5" type="Side" description="side of market"/>
-    <field name="qty"         id="6" type="double" description="quantity to trade"/>
+    <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="origClOrdId" id="2"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="orderId"     id="3"  type="uint32" description="plasma order id"/>
+    <field name="symbol"      id="4"  type="uint32" description="security to be traded"/>
+    <field name="side"        id="5"  type="Side"   description="side of market"/>
+    <field name="qty"         id="6"  type="double" description="quantity to trade"/>
   </message>
-  <message name="OrderCancelReject" id="5" description="Order Cancel Reject">
-    <field name="clOrdId"     id="1" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="origClOrdId" id="2" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="orderId"     id="3" type="uint32" description="plasma order id"/>
-    <field name="symbol"      id="4" type="uint32" description="security to be traded"/>
-    <field name="side"        id="5" type="Side" description="side of market"/>
-    <field name="qty"         id="6" type="double" description="quantity to trade"/>
+  <message name="OrderCancelReject"   id="5" description="Order Cancel Reject">
+    <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="origClOrdId" id="2"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="orderId"     id="3"  type="uint32" description="plasma order id"/>
+    <field name="symbol"      id="4"  type="uint32" description="security to be traded"/>
+    <field name="side"        id="5"  type="Side"   description="side of market"/>
+    <field name="qty"         id="6"  type="double" description="quantity to trade"/>
+    <field name="status"      id="7"  type="OrdStatus"  description="current status of order"/>
+  </message>
+  <message name="NonFillReport"       id="6" description="Non Fill Report">
+    <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="origClOrdId" id="2"  type="uint32" description="one byte source id, three byte seq id"/>
+    <field name="orderId"     id="3"  type="uint32" description="plasma order id"/>
+    <field name="symbol"      id="4"  type="uint32" description="security to be traded"/>
+    <field name="side"        id="5"  type="Side"   description="side of market"/>
+    <field name="qty"         id="6"  type="double" description="quantity to trade"/>
+      <!-- execution fields -->
+    <field name="status"      id="7"  type="OrdStatus"  description="current status of order"/>
+    <field name="cumQty"      id="8"  type="double"  description="cumulative quantity executed"/>
+    <field name="leavesQty"   id="9"  type="double"  description="leaves quantity"/>
+    <field name="avgPx"       id="10" type="double"  description="execution average price"/>
+  </message>
+  <message name="FillReport"          id="7" description="Fill Report">
+    <field name="orderId"     id="1"  type="uint32"  description="plasma order id"/>
+    <field name="clOrdId"     id="2"  type="uint32"  description="one byte source id, three byte seq id"/>
+    <field name="execId"      id="3"  type="uint32"  description="one byte source id, three byte seq id"/>
+    <field name="symbol"      id="4"  type="uint32"  description="security to be traded"/>
+    <field name="side"        id="5"  type="Side"    description="side of market"/>
+    <field name="qty"         id="6"  type="double"  description="quantity to trade"/>
+      <!-- execution fields -->
+    <field name="status"      id="7"  type="OrdStatus"  description="current status of order"/>
+    <field name="cumQty"      id="8"  type="double"  description="cumulative quantity executed"/>
+    <field name="leavesQty"   id="9"  type="double"  description="leaves quantity"/>
+    <field name="avgPx"       id="10" type="double"  description="execution average price"/>
+    <field name="lastQty"     id="11" type="double"  description="last executed quantity"/>
+    <field name="lastPx"      id="12" type="double"  description="last executed price"/>
 
   </message>
-  <message name="NonFillReport" id="6" description="Non Fill Report">
-    <field name="clOrdId"     id="1" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="origClOrdId" id="2" type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="orderId"     id="3" type="uint32" description="plasma order id"/>
-    <field name="symbol"      id="4" type="uint32" description="security to be traded"/>
-    <field name="side"        id="5" type="Side" description="side of market"/>
-    <field name="qty"         id="6" type="double" description="quantity to trade"/>
-    
-    <field name="cumQty"      id="7" type="double"  description="cumulative quantity executed"/>
-    <field name="leavesQty"   id="8" type="double"  description="leaves quantity"/>
-    <field name="avgPx"       id="9" type="double"  description="execution average price"/>
-  </message>
-  <message name="FillReport" id="7" description="Fill Report">
-    <field name="orderId"     id="1" type="uint32"  description="plasma order id"/>
-    <field name="clOrdId"     id="2" type="uint32"  description="one byte source id, three byte seq id"/>
-    <field name="execId"      id="3" type="uint32"  description="one byte source id, three byte seq id"/>
-    <field name="symbol"      id="4" type="uint32"  description="security to be traded"/>
-    <field name="side"        id="5" type="Side"    description="side of market"/>
-    <field name="qty"         id="6" type="double"  description="quantity to trade"/>
-    
-    <field name="cumQty"      id="7" type="double"  description="cumulative quantity executed"/>
-    <field name="leavesQty"   id="8" type="double"  description="leaves quantity"/>
-    <field name="avgPx"       id="9" type="double"  description="execution average price"/>
-    <field name="lastQty"     id="10" type="double"  description="last executed quantity"/>
-    <field name="lastPx"      id="11" type="double"  description="last executed price"/>
-
-  </message>
-  <message name="DontKnowTrade" id="8" description="Dont Know Execution Report">
-    <field name="orderId"     id="1" type="uint32"  description="plasma order id"/>
-    <field name="execId"      id="2" type="uint32"  description="one byte source id, three byte seq id"/>
-    <field name="symbol"      id="3" type="uint32"  description="security to be traded"/>
-    <field name="side"        id="4" type="Side"    description="side of market"/>
-    <field name="qty"         id="5" type="double"  description="quantity to trade"/>
-    <field name="reason"      id="6" type="uint8"   description="reason code"/>
+  <message name="DontKnowTrade"       id="8" description="Dont Know Execution Report">
+    <field name="orderId"     id="1"  type="uint32"  description="plasma order id"/>
+    <field name="execId"      id="2"  type="uint32"  description="one byte source id, three byte seq id"/>
+    <field name="symbol"      id="3"  type="uint32"  description="security to be traded"/>
+    <field name="side"        id="4"  type="Side"    description="side of market"/>
+    <field name="qty"         id="5"  type="double"  description="quantity to trade"/>
+    <field name="reason"      id="6"  type="uint8"   description="reason code"/>
   </message>
 </messageSchema>

@@ -1,5 +1,5 @@
 # code copied from https://crascit.com/2015/07/25/cmake-gtest/
-cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 project(googletest-download NONE)
 

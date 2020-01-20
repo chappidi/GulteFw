@@ -1,7 +1,7 @@
 ﻿# CMakeList.txt : CMake project for plasma, include source and define
 # project specific logic here.
 #
-cmake_minimum_required (VERSION 3.15)
+cmake_minimum_required (VERSION 3.13)
 
 add_library(plasma_lib INTERFACE)
 target_include_directories(plasma_lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
