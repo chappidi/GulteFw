@@ -55,6 +55,7 @@ struct Sink {
 class EPA final : public plasma::ICallback, public Sink
 {
 public:
+	int ClOrdId = 0;
 	uint8_t id() { return ID; }
 	void OnMsg(const NewOrderSingle& req) override {
 		stringstream strm;

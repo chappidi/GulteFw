@@ -1,4 +1,4 @@
-﻿cmake_minimum_required (VERSION 3.13)
+﻿cmake_minimum_required (VERSION 3.15)
 project (plasma CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,6 +11,7 @@ fetch_googletest(
     )
 
 add_subdirectory (sbe)
+add_subdirectory (plasma_lib)
 add_subdirectory (plasma)
 enable_testing()
 add_subdirectory (test)

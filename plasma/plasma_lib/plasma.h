@@ -23,9 +23,7 @@ namespace plasma
 		void OnMsg(const OrderCancelReject& rpt);
 		void OnMsg(const DontKnowTrade& rpt);
 
-		void OnLogin(ICallback& cb) {
-		}
-		void OnLogout(ICallback& cb) {
-		}
+		void OnLogin(ICallback& cb);
+		void OnLogout(ICallback& cb);
 	};
 }

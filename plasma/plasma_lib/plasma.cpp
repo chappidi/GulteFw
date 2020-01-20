@@ -16,12 +16,13 @@ namespace plasma
 		strm << "PLS:\t\tNOS[" << ClientId(req.clOrdId()) << "]";
 		std::cout << strm.str() << std::endl;
 		Wrap<NewOrderSingle> nos;
-		_out_os[2]->OnMsg(nos);
+		_out_os[req.target()]->OnMsg(nos);
 	}
 	void OMS::OnMsg(const OrderStatusRequest& req) {
 		stringstream strm;
 		strm << "PLS:\t\tOSR[" << ClientId(req.clOrdId()) << " / " << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
+
 		Wrap<OrderStatusRequest> osr;
 		_out_os[2]->OnMsg(osr);
 	}
@@ -71,5 +72,10 @@ namespace plasma
 		std::cout << strm.str() << std::endl;
 		Wrap<DontKnowTrade> dkt;
 		_out_os[2]->OnMsg(dkt);
+	}
+	void OMS::OnLogin(ICallback& cb) {
+		_out_os[cb.id()] = &cb;
+	}
+	void OMS::OnLogout(ICallback& cb) {
 	}
 }

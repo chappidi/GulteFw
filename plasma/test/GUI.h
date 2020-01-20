@@ -71,6 +71,10 @@ public:
 
 class GUI final : public plasma::ICallback, public Source
 {
+public:
+	PROXY<NonFillReport>	nfr;
+	PROXY<FillReport>		fill;
+	PROXY<OrderCancelReject> rjt;
 	uint8_t id() { return ID; }
 	void OnMsg(const NewOrderSingle& req) override {
 		// Never receives it
