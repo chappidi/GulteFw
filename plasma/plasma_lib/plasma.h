@@ -1,10 +1,11 @@
 ﻿#pragma once
-
-#include <iostream>
-#include <unordered_map>
 #include "ICallback.h"
+#include "Order.h"
+#include <iostream>
 #include <sstream>
 #include <cassert>
+#include <vector>
+#include <unordered_map>
 using namespace std;
 using namespace plasma::client;
 
@@ -13,7 +14,9 @@ namespace plasma
 	class OMS
 	{
 		unordered_map<uint8_t, ICallback*> _out_os;
+		vector<Order*> _orders;
 	public:
+		OMS();
 		void OnMsg(const NewOrderSingle& req);
 		void OnMsg(const OrderStatusRequest& req);
 		void OnMsg(const OrderCancelRequest& req);

@@ -7,15 +7,31 @@ struct Wrap : public T {
 	Wrap() {
 		wrapAndApplyHeader(data, 0, 1024);
 	}
+	Wrap(const T& o) {
+		wrapAndApplyHeader(data, 0, 1024);
+		assert(sbeSchemaVersion() == o.sbeSchemaVersion());
+		memcpy(data, o.buffer(), o.bufferLength());
+	}
 };
 
 namespace plasma
 {
+	OMS::OMS() {
+		// dummy order.
+		_orders.push_back(nullptr);
+	}
 	void OMS::OnMsg(const NewOrderSingle& req) {
 		stringstream strm;
 		strm << "PLS:\t\tNOS[" << ClientId(req.clOrdId()) << "]";
 		std::cout << strm.str() << std::endl;
-		Wrap<NewOrderSingle> nos;
+
+		// get the plasma id.
+		auto pid = _orders.size();
+		// Create Order. store it in _orders
+		_orders.insert(_orders.end(), new Order(pid, req));
+
+		Wrap<NewOrderSingle> nos(req);
+		nos.clOrdId(pid);
 		_out_os[req.target()]->OnMsg(nos);
 	}
 	void OMS::OnMsg(const OrderStatusRequest& req) {
