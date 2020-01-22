@@ -5,18 +5,28 @@
 #include <sstream>
 #include <cassert>
 #include <vector>
+#include <map>
 #include <unordered_map>
 using namespace std;
 using namespace plasma::client;
 
 namespace plasma
 {
-	class OMS
+	struct XYZ {
+		ICallback* _cb;
+		map<uint32_t, uint32_t > _clnt2oms;
+	};
+	class OMS final
 	{
-		unordered_map<uint8_t, ICallback*> _out_os;
+		unordered_map<uint8_t, XYZ> _out_os;
 		vector<Order*> _orders;
+		Order* lookup(uint32_t orderId, uint32_t clOrdId);
 	public:
-		OMS();
+		uint8_t id() { return 0; }
+		OMS() {
+			// dummy order.
+			_orders.push_back(nullptr);
+		}
 		void OnMsg(const NewOrderSingle& req);
 		void OnMsg(const OrderStatusRequest& req);
 		void OnMsg(const OrderCancelRequest& req);
