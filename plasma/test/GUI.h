@@ -97,6 +97,7 @@ public:
 		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
 		//		std::cout << strm.str() << sQty.str() << std::endl;
 		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
+		nfr = rpt;
 	}
 	void OnMsg(const FillReport& rpt) override {
 		stringstream strm;
@@ -107,12 +108,14 @@ public:
 		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
 		//		std::cout << strm.str() << std::endl;
 		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
+		fill = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;
 		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
 		strm << OrdStatus::c_str(rpt.status());
 		std::cout << strm.str() << std::endl;
+		rjt = rpt;
 	}
 	void OnMsg(const DontKnowTrade& rpt) override {
 		// Never receives it

@@ -16,7 +16,12 @@ struct PROXY : public T {
 		: data(std::make_unique<char[]>(length)) {
 		this->wrapAndApplyHeader(data.get(), 0, length);
 	}
-/*
+	PROXY<T>& operator= (const T& rhs) {
+		assert(sbeSchemaVersion() == rhs.sbeSchemaVersion());
+		memcpy(data.get(), rhs.buffer(), rhs.bufferLength());
+		return *this;
+	}
+	/*
 	PROXY(PROXY<T>&& o) noexcept
 		: data(std::move(o.data)) {
 		this->wrapAndApplyHeader(data.get(), 0, o.bufferLength());

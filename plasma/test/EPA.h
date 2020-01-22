@@ -195,6 +195,7 @@ public:
 		stringstream strm;
 		strm << "\tEPA:\tNOS[" << req.clOrdId() << "]";
 		std::cout << strm.str() << std::endl;
+
 		auto oid = ord_id++;
 		_clt2Ord[req.clOrdId()] = new EOrder(oid, req);
 		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
@@ -204,6 +205,7 @@ public:
 		stringstream strm;
 		strm << "\tEPA:\tOCR[" << req.clOrdId() << "/" << req.origClOrdId() << "/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
+
 		auto oid = ord_id++;
 		_clt2Ord[req.clOrdId()] = new EOrder(oid, req);
 		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
@@ -213,6 +215,7 @@ public:
 		stringstream strm;
 		strm << "\tEPA:\tORR[" << req.clOrdId() << "/" << req.origClOrdId() << "/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
+
 		auto oid = ord_id++;
 		_clt2Ord[req.clOrdId()] = new EOrder(oid, req);
 		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
