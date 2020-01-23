@@ -72,6 +72,7 @@ public:
 class GUI final : public plasma::ICallback, public Source
 {
 public:
+	PROXY<ExecutionReport>	exe;
 	PROXY<NonFillReport>	nfr;
 	PROXY<FillReport>		fill;
 	PROXY<OrderCancelReject> rjt;
@@ -87,6 +88,16 @@ public:
 	}
 	void OnMsg(const OrderStatusRequest& req) override {
 		// Never receives it
+	}
+	void OnMsg(const ExecutionReport& rpt) override {
+		stringstream strm;
+		strm << "\tGUI:\tEXE[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
+		stringstream  sts;
+		//		sts << toString(rpt._action) << " / " << toString(rpt.status());
+		stringstream  sQty;
+		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
+		//		std::cout << strm.str() << sQty.str() << std::endl;
+		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
 	}
 	void OnMsg(const NonFillReport& rpt) override {
 		stringstream strm;
