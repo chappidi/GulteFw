@@ -4,8 +4,6 @@
 #include <plasma_client/OrderReplaceRequest.h>
 #include <plasma_client/OrderStatusRequest.h>
 #include <plasma_client/OrderCancelReject.h>
-#include <plasma_client/NonFillReport.h>
-#include <plasma_client/FillReport.h>
 #include <set>
 using namespace std;
 using namespace plasma::client;
@@ -71,34 +69,6 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) {
 
 	rpt.lastQty(0);
 	rpt.lastPx(0);
-	return rpt;
-}
-static NonFillReport& operator << (NonFillReport& ntr, const EOrder& sts) {
-	ntr.clOrdId(sts._clOrdId);
-	ntr.orderId(sts._ordId);
-
-	ntr.symbol(sts._symbol);
-	ntr.side(sts._side);
-	ntr.qty(sts._qty);
-
-	ntr.status(sts._status);
-	ntr.cumQty(sts._cumQty);
-	ntr.leavesQty(sts.leavesQty());
-	ntr.avgPx(sts._avgPx);
-	return ntr;
-}
-static FillReport& operator << (FillReport& rpt, const EOrder& sts) {
-	rpt.clOrdId(sts._clOrdId);
-	rpt.orderId(sts._ordId);
-
-	rpt.symbol(sts._symbol);
-	rpt.side(sts._side);
-	rpt.qty(sts._qty);
-
-	rpt.status(sts._status);
-	rpt.cumQty(sts._cumQty);
-	rpt.leavesQty(sts.leavesQty());
-	rpt.avgPx(sts._avgPx);
 	return rpt;
 }
 static OrderCancelReject& operator << (OrderCancelReject& rjt, const EOrder& sts) {

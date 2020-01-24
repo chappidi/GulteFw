@@ -5,8 +5,6 @@
 #include <plasma_client/OrderStatusRequest.h>
 #include <plasma_client/OrderCancelReject.h>
 #include <plasma_client/ExecutionReport.h>
-#include <plasma_client/NonFillReport.h>
-#include <plasma_client/FillReport.h>
 #include <plasma_client/DontKnowTrade.h>
 #include <iostream>
 using namespace std;
@@ -30,8 +28,6 @@ namespace plasma {
 		virtual void OnMsg(const OrderReplaceRequest& req) = 0;
 		virtual void OnMsg(const OrderStatusRequest& req) = 0;
 		virtual void OnMsg(const ExecutionReport& rpt) = 0;
-		virtual void OnMsg(const NonFillReport& rpt) = 0;
-		virtual void OnMsg(const FillReport& rpt) = 0;
 		virtual void OnMsg(const OrderCancelReject& rpt) = 0;
 		virtual void OnMsg(const DontKnowTrade& rpt) = 0;
 	};

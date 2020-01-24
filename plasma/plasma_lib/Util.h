@@ -1,7 +1,7 @@
 #pragma once
 #include <plasma_client/OrderStatusRequest.h>
 #include <plasma_client/OrderCancelReject.h>
-#include <plasma_client/NonFillReport.h>
+#include <plasma_client/ExecutionReport.h>
 
 template<typename T>
 struct Wrap : public T {
@@ -16,20 +16,23 @@ struct Wrap : public T {
 	}
 };
 
-NonFillReport& operator << (NonFillReport& ntr, const OrderStatusRequest& osr)
+ExecutionReport& operator << (ExecutionReport& rpt, const OrderStatusRequest& osr)
 {
-	ntr.clOrdId(osr.clOrdId());
-	ntr.orderId(osr.orderId());
-	ntr.symbol(osr.symbol());
-	ntr.side(osr.side());
+	rpt.clOrdId(osr.clOrdId());
+	rpt.orderId(osr.orderId());
+	rpt.symbol(osr.symbol());
+	rpt.side(osr.side());
 
-//	ntr.action(ExecType::Order_Status);
-	ntr.status(OrdStatus::Rejected);
-	ntr.qty(0);
-	ntr.cumQty(0);
-	ntr.leavesQty(0);
-	ntr.avgPx(0);
-	return ntr;
+	rpt.execType(ExecType::Order_Status);
+	rpt.ordStatus(OrdStatus::Rejected);
+	rpt.qty(0);
+	rpt.cumQty(0);
+	rpt.leavesQty(0);
+	rpt.avgPx(0);
+
+	rpt.lastQty(0);
+	rpt.lastPx(0);
+	return rpt;
 }
 
 OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderCancelRequest& req) {
@@ -50,23 +53,6 @@ OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderReplaceReques
 }
 
 DontKnowTrade& operator << (DontKnowTrade dkt, const ExecutionReport& rpt) {
-	dkt.orderId(rpt.orderId());
-	dkt.execId(rpt.execId());
-	dkt.symbol(rpt.symbol());
-	dkt.side(rpt.side());
-	dkt.reason(0);
-	return dkt;
-}
-
-DontKnowTrade& operator << (DontKnowTrade dkt, const NonFillReport& rpt) {
-	dkt.orderId(rpt.orderId());
-	dkt.execId(rpt.execId());
-	dkt.symbol(rpt.symbol());
-	dkt.side(rpt.side());
-	dkt.reason(0);
-	return dkt;
-}
-DontKnowTrade& operator << (DontKnowTrade dkt, const FillReport& rpt) {
 	dkt.orderId(rpt.orderId());
 	dkt.execId(rpt.execId());
 	dkt.symbol(rpt.symbol());

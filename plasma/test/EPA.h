@@ -180,12 +180,14 @@ struct Sink {
 	auto get_pnd_rpl(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
+		// pointing to the orig req
+		assert(sts._prev != 0);
+		sts._prev = 0;		// reset it
 
 		// either first or existing current rpl does not have a chain
 		assert(orig._head_rpl == 0 || _oid2Ord[orig._head_rpl]->_prev == 0);
 
 		sts._next = orig._head_cxl;
-		assert(sts._prev == 0);
 		// there is a replace req pending
 		if (orig._head_rpl != 0) {
 			_oid2Ord[orig._head_rpl]->_prev = sts._ordId;
@@ -193,27 +195,31 @@ struct Sink {
 		// set the new replace as head
 		orig._head_rpl = sts._ordId;
 
-		PROXY<NonFillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[origClOrdId];
 		rpt.origClOrdId(origClOrdId);
 		rpt.clOrdId(clOrdId);
 //		rpt.orderId(ord_id++);
 
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::Pending_Replace);
-		rpt.status(OrdStatus::Pending_Replace);
+		rpt.execType(ExecType::Pending_Replace);
+		rpt.ordStatus(OrdStatus::Pending_Replace);
 		return rpt;
 	}
 	auto get_rpld(uint32_t clOrdId, uint32_t origClOrdId) {
-		PROXY<NonFillReport> rpt;
+		EOrder& orig = *_clt2Ord[origClOrdId];
+		EOrder& sts = *_clt2Ord[clOrdId];
+
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.origClOrdId(origClOrdId);
 //		rpt.clOrdId(clOrdId);
 //		rpt.orderId(ord_id++);
 
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::Replace);
-		rpt.status(OrdStatus::New);
+		rpt.execType(ExecType::Replace);
+		//??? depends on the situation
+		rpt.ordStatus(OrdStatus::New);
 		return rpt;
 	}
 };
@@ -263,12 +269,6 @@ public:
 		ClOrdId = req.clOrdId();
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
-		// EPA sends it. does not receive it 
-	}
-	void OnMsg(const NonFillReport& rpt) override {
-		// EPA sends it. does not receive it 
-	}
-	void OnMsg(const FillReport& rpt) override {
 		// EPA sends it. does not receive it 
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {

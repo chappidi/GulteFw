@@ -39,7 +39,7 @@ namespace plasma
 			Order* sts = lookup(0, req.clOrdId());
 			if (sts != nullptr) {
 				// https://www.onixs.biz/fix-dictionary/4.4/app_dF.1.b.html
-				Wrap<NonFillReport> rpt;
+				Wrap<ExecutionReport> rpt;
 				rpt << *sts;
 //				rpt.action((PossResent == true) ? ExecType::Order_Status : ExecType::Rejected);
 //				rpt.action(ExecType::Rejected);
@@ -77,7 +77,7 @@ namespace plasma
 			Order* sts = lookup(req.orderId(), req.clOrdId());
 			if (sts == nullptr) {
 				//https://www.onixs.biz/fix-dictionary/4.4/app_dG.1.a.html
-				Wrap<NonFillReport> rpt;
+				Wrap<ExecutionReport> rpt;
 				rpt << req;
 				xyz._cb->OnMsg(rpt);
 				return;
@@ -97,7 +97,7 @@ namespace plasma
 			while (sts->_rplOrdId != 0) {
 				sts = _orders[sts->_rplOrdId];
 			}
-			Wrap<NonFillReport> rpt;
+			Wrap<ExecutionReport> rpt;
 			rpt << *sts;
 //			rpt.action(ExecType::Order_Status);
 			// if the order is replaced. then set the origClOrdId
@@ -216,54 +216,6 @@ namespace plasma
 			assert(nxt->_symbol == rpt.symbol() && nxt->_side == rpt.side());
 			assert((orig == nullptr) || (orig->_symbol == nxt->_symbol && orig->_side == nxt->_side));
 
-			// when action = replace or cancel. orig != nullptr. 
-			// so next in chain has to be kept updated.
-			(*nxt).Update(rpt);
-			// send rpt out with updated status
-			ClientId clt(nxt->_srcOrdId);
-			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
-			{
-				Wrap<ExecutionReport> exe(rpt);
-				exe.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
-				exe.clOrdId(nxt->_srcOrdId);
-				exe.orderId((orig != nullptr) ? orig->_plsOrdId : nxt->_plsOrdId);
-				itr->second._cb->OnMsg(exe);
-			}
-		}
-		catch (exception & ex) {
-
-		}
-
-	}
-	//////////////////////////////////////////////////////////////////////
-	//
-	void OMS::OnMsg(const NonFillReport& rpt) {
-		stringstream strm;
-		strm << "PLS:\t\tNTR[" << rpt.clOrdId() << "/" << rpt.origClOrdId() << "/" << rpt.orderId() << "]";
-		//			strm << toString(rpt._action) << " / " << OrdStatus::c_str(rpt.status());
-		strm << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
-		std::cout << strm.str() << std::endl;
-
-
-		ClientId cltId(rpt.execId());
-		ICallback* in = _out_os[cltId.instance()]._cb;
-		try
-		{
-			// clOrdId of ExecutionReport == order index in _orders
-			// check the Order exists
-			if (rpt.clOrdId() == 0 || rpt.clOrdId() > _orders.size()
-				|| (rpt.origClOrdId() != 0 && rpt.origClOrdId() > _orders.size())) {
-				Wrap<DontKnowTrade> dkt;
-				dkt << rpt;
-				(*in).OnMsg(dkt);
-				return;
-			}
-			Order* orig = (rpt.origClOrdId() != 0) ? _orders[rpt.origClOrdId()] : nullptr;
-			Order* nxt = _orders[rpt.clOrdId()];
-			// step: validate
-			assert(nxt != nullptr);
-//			assert(nxt->_symbol == orig->_symbol && nxt->_side == orig->_side);
-			assert(nxt->_symbol == rpt.symbol() && nxt->_side == rpt.side());
 			// TODO: update state
 			if (orig != nullptr) {
 				(*orig).Update(rpt);
@@ -282,49 +234,11 @@ namespace plasma
 			ClientId clt(nxt->_srcOrdId);
 			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
 			{
-				Wrap<NonFillReport> ext(rpt);
-				ext.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
-				ext.clOrdId(nxt->_srcOrdId);
-				ext.orderId((orig != nullptr) ? orig->_plsOrdId : nxt->_plsOrdId);
-				itr->second._cb->OnMsg(ext);
-			}
-		}
-		catch (exception & ex) {
-
-		}
-	}
-	//////////////////////////////////////////////////////////////////////
-	//
-	void OMS::OnMsg(const FillReport& rpt) {
-		stringstream strm;
-		strm << "PLS:\t\tTRD[" << rpt.clOrdId() << "/" << rpt.orderId() << "]";
-		strm << OrdStatus::c_str(rpt.status());
-		strm << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
-		std::cout << strm.str() << std::endl;
-
-		ClientId cltId(rpt.execId());
-		ICallback* in = _out_os[cltId.instance()]._cb;
-		try
-		{
-			// clOrdId == order index in _orders
-			if (rpt.clOrdId() == 0 || rpt.clOrdId() > _orders.size()) {
-				Wrap<DontKnowTrade> dkt;
-				dkt << rpt;
-				(*in).OnMsg(dkt);
-				return;
-			}
-			Order* sts = _orders[rpt.clOrdId()];
-			// step: validate
-			assert(sts != nullptr && sts->_symbol == rpt.symbol() && sts->_side == rpt.side());
-			(*sts).Update(rpt);
-			// send rpt out with updated status
-			ClientId clt(sts->_srcOrdId);
-			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
-			{
-				Wrap<FillReport> ext(rpt);
-				ext.clOrdId(sts->_srcOrdId);
-				ext.orderId(sts->_plsOrdId);
-				itr->second._cb->OnMsg(ext);
+				Wrap<ExecutionReport> exe(rpt);
+				exe.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
+				exe.clOrdId(nxt->_srcOrdId);
+				exe.orderId((orig != nullptr) ? orig->_plsOrdId : nxt->_plsOrdId);
+				itr->second._cb->OnMsg(exe);
 			}
 		}
 		catch (exception & ex) {

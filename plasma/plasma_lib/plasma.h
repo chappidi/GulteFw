@@ -32,8 +32,6 @@ namespace plasma
 		void OnMsg(const OrderCancelRequest& req);
 		void OnMsg(const OrderReplaceRequest& req);
 		void OnMsg(const ExecutionReport& rpt);
-		void OnMsg(const NonFillReport& rpt);
-		void OnMsg(const FillReport& rpt);
 		void OnMsg(const OrderCancelReject& rpt);
 		void OnMsg(const DontKnowTrade& rpt);
 

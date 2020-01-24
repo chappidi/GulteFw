@@ -73,8 +73,6 @@ class GUI final : public plasma::ICallback, public Source
 {
 public:
 	PROXY<ExecutionReport>	exe;
-	PROXY<NonFillReport>	nfr;
-	PROXY<FillReport>		fill;
 	PROXY<OrderCancelReject> rjt;
 	uint8_t id() { return ID; }
 	void OnMsg(const NewOrderSingle& req) override {
@@ -99,28 +97,6 @@ public:
 		//		std::cout << strm.str() << sQty.str() << std::endl;
 		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
 		exe = rpt;
-	}
-	void OnMsg(const NonFillReport& rpt) override {
-		stringstream strm;
-		strm << "\tGUI:\tNTR[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
-		stringstream  sts;
-//		sts << toString(rpt._action) << " / " << toString(rpt.status());
-		stringstream  sQty;
-		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
-		//		std::cout << strm.str() << sQty.str() << std::endl;
-		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
-		nfr = rpt;
-	}
-	void OnMsg(const FillReport& rpt) override {
-		stringstream strm;
-		strm << "\tGUI:\tTRD[" << ClientId(rpt.clOrdId()) << "/" << rpt.orderId() << "] ";
-		stringstream  sts;
-		sts << OrdStatus::c_str(rpt.status());
-		stringstream  sQty;
-		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
-		//		std::cout << strm.str() << std::endl;
-		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
-		fill = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;

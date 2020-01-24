@@ -4,8 +4,6 @@
 #include <plasma_client/OrderReplaceRequest.h>
 #include <plasma_client/OrderStatusRequest.h>
 #include <plasma_client/OrderCancelReject.h>
-#include <plasma_client/NonFillReport.h>
-#include <plasma_client/FillReport.h>
 #include <plasma_client/DontKnowTrade.h>
 #include <memory>
 

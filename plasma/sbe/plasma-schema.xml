@@ -24,7 +24,7 @@
       <validValue name="Trade">3</validValue>
       <validValue name="Done_For_Day">4</validValue>
       <validValue name="Canceled">5</validValue>
-      <validValue name="Replaced">6</validValue>
+      <validValue name="Replace">6</validValue>
       <validValue name="Pending_Cancel">7</validValue>
       <validValue name="Stopped">8</validValue>
       <validValue name="Rejected">9</validValue>
@@ -89,37 +89,6 @@
     <field name="side"        id="5"  type="Side"   description="side of market"/>
     <field name="qty"         id="6"  type="double" description="quantity to trade"/>
     <field name="status"      id="7"  type="OrdStatus"  description="current status of order"/>
-  </message>
-  <message name="NonFillReport"       id="6" description="Non Fill Report">
-    <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="origClOrdId" id="2"  type="uint32" description="one byte source id, three byte seq id"/>
-    <field name="orderId"     id="3"  type="uint32" description="plasma order id"/>
-    <field name="execId"      id="4"  type="uint32"  description="one byte source id, three byte seq id"/>
-    <field name="symbol"      id="5"  type="uint32" description="security to be traded"/>
-    <field name="side"        id="6"  type="Side"   description="side of market"/>
-    <field name="qty"         id="7"  type="double" description="quantity to trade"/>
-      <!-- execution fields -->
-    <field name="execType"    id="8"  type="ExecType"  description="execution type"/>
-    <field name="status"      id="9"  type="OrdStatus"  description="current status of order"/>
-    <field name="cumQty"      id="10" type="double"  description="cumulative quantity executed"/>
-    <field name="leavesQty"   id="11" type="double"  description="leaves quantity"/>
-    <field name="avgPx"       id="12" type="double"  description="execution average price"/>
-  </message>
-  <message name="FillReport"          id="7" description="Fill Report">
-    <field name="orderId"     id="1"  type="uint32"  description="plasma order id"/>
-    <field name="clOrdId"     id="2"  type="uint32"  description="one byte source id, three byte seq id"/>
-    <field name="execId"      id="3"  type="uint32"  description="one byte source id, three byte seq id"/>
-    <field name="symbol"      id="4"  type="uint32"  description="security to be traded"/>
-    <field name="side"        id="5"  type="Side"    description="side of market"/>
-    <field name="qty"         id="6"  type="double"  description="quantity to trade"/>
-      <!-- execution fields -->
-    <field name="status"      id="7"  type="OrdStatus"  description="current status of order"/>
-    <field name="cumQty"      id="8"  type="double"  description="cumulative quantity executed"/>
-    <field name="leavesQty"   id="9"  type="double"  description="leaves quantity"/>
-    <field name="avgPx"       id="10" type="double"  description="execution average price"/>
-    <field name="lastQty"     id="11" type="double"  description="last executed quantity"/>
-    <field name="lastPx"      id="12" type="double"  description="last executed price"/>
-
   </message>
   <message name="DontKnowTrade"       id="8" description="Dont Know Execution Report">
     <field name="orderId"     id="1"  type="uint32"  description="plasma order id"/>

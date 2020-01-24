@@ -160,6 +160,7 @@ struct TestSuiteB1 : public testing::Test
 		plasma.OnMsg(nos);
 		auto idX = epa.ClOrdId;
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
+		// ack order
 		plasma.OnMsg(epa.get_new(idX));
 		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
