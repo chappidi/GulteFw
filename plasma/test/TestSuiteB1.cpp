@@ -1,13 +1,21 @@
-#include "TestSuite.h"
+#include <plasma.h>
+#include "GUI.h"
+#include "EPA.h"
+#include <gtest/gtest.h>
 
-struct TestSuiteB1 : public TestSuite
+struct TestSuiteB1 : public testing::Test
 {
+	// declare variables
+	plasma::OMS plasma;
+	GUI clt;
+	EPA epa;
 	TestSuiteB1() {
-		//empty
+		plasma.OnLogin(clt);
+		plasma.OnLogin(epa);
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
-	//  Ack
+	//  Ack				(X)
 	//  Cancel Request	(Y,X)
 	//	Pending Cxl		(Y,X)
 	//	Cancel Reject	(Y,X)
@@ -20,7 +28,10 @@ struct TestSuiteB1 : public TestSuite
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
 		// ack order
 		plasma.OnMsg(epa.get_new(idX));
-		VALIDATE_NEW(nos, idX, clt.nfr);
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		//cancel request
 		auto ocr = clt.get_cxl(idX, nos);
 		plasma.OnMsg(ocr);
@@ -28,15 +39,18 @@ struct TestSuiteB1 : public TestSuite
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// pending cxl ack
 		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
-		VALIDATE_PENDING_CXL(nos, ocr, idX, clt.nfr);
-		EXPECT_TRUE(clt.nfr.leavesQty() == 10000 && clt.nfr.cumQty() == 0 && clt.nfr.avgPx() == 0);
+		assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
 		plasma.OnMsg(epa.get_rjt(idY, idX));
-		VALIDATE_CXL_RJT(nos, ocr, idX, clt.rjt);
+		assert(clt.rjt.status() == OrdStatus::New);
+		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	} 
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
-	//  Ack
+	//  Ack				(X)
 	//  Cancel Request	(Y,X)
 	//	Pending Cxl		(Y,X)
 	//	Canceled		(Y,X)
@@ -49,7 +63,10 @@ struct TestSuiteB1 : public TestSuite
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
 		// ack order
 		plasma.OnMsg(epa.get_new(idX));
-		VALIDATE_NEW(nos, idX, clt.nfr);
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		//cancel request
 		auto ocr = clt.get_cxl(idX, nos);
 		plasma.OnMsg(ocr);
@@ -57,16 +74,20 @@ struct TestSuiteB1 : public TestSuite
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// pending cancel
 		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
-		VALIDATE_PENDING_CXL(nos, ocr, idX, clt.nfr);
-		EXPECT_TRUE(clt.nfr.leavesQty() == nos.qty() && clt.nfr.cumQty() == 0 && clt.nfr.avgPx() == 0);
+		assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// accept cancel
 		plasma.OnMsg(epa.get_cxld(idY, idX));
-		VALIDATE_CXLD(nos, ocr, idX, clt.nfr);
-		EXPECT_TRUE(clt.nfr.leavesQty() == 0 && clt.nfr.cumQty() == 0 && clt.nfr.avgPx() == 0);
+		assert(clt.exe.execType() == ExecType::Canceled && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
-	//  Ack
+	//  Ack				(X)
 	//  Partial Fill	(X)
 	//  Cancel Request	(Y,X)
 	//  Partial Fill	(X)
@@ -80,39 +101,52 @@ struct TestSuiteB1 : public TestSuite
 		plasma.OnMsg(nos);
 		auto idX = epa.ClOrdId;
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
+		// ack order
 		plasma.OnMsg(epa.get_new(idX));
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// fill 2000
 		plasma.OnMsg(epa.get_fill(idX, 2000, 99.98));
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == OrdStatus::Partially_Filled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 8000 && clt.exe.cumQty() == 2000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 2000 && clt.exe.lastPx() == 99.98);
+
 		// cancel request
 		auto ocr = clt.get_cxl(idX, nos);
 		plasma.OnMsg(ocr);
 		auto idY = epa.ClOrdId;
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
-
 		// fill 3000
 		plasma.OnMsg(epa.get_fill(idX, 3000, 99.98));
-		EXPECT_TRUE(clt.fill.status() == OrdStatus::Partially_Filled);
-		EXPECT_TRUE(clt.fill.clOrdId() == nos.clOrdId() && clt.fill.orderId() == idX);
-		EXPECT_TRUE(clt.fill.lastPx() == 99.98 && clt.fill.lastQty() == 3000);
-		EXPECT_TRUE(clt.fill.leavesQty() == 5000 && clt.fill.cumQty() == 5000 && clt.fill.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == OrdStatus::Partially_Filled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 5000 && clt.exe.cumQty() == 5000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 3000 && clt.exe.lastPx() == 99.98);
 		// pending cancel
 		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
-		VALIDATE_PENDING_CXL(nos, ocr, idX, clt.nfr);
-		EXPECT_TRUE(clt.nfr.leavesQty() == 5000 && clt.nfr.cumQty() == 5000 && clt.nfr.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 5000 && clt.exe.cumQty() == 5000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// fill 1000
 		plasma.OnMsg(epa.get_fill(idX, 1000, 99.98));
-		EXPECT_TRUE(clt.fill.status() == OrdStatus::Pending_Cancel);
-		EXPECT_TRUE(clt.fill.clOrdId() == nos.clOrdId() && clt.fill.orderId() == idX);
-		EXPECT_TRUE(clt.fill.lastPx() == 99.98 && clt.fill.lastQty() == 1000);
-		EXPECT_TRUE(clt.fill.leavesQty() == 4000 && clt.fill.cumQty() == 6000 && clt.fill.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 4000 && clt.exe.cumQty() == 6000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 1000 && clt.exe.lastPx() == 99.98);
 		// canceled
 		plasma.OnMsg(epa.get_cxld(idY, idX));
-		VALIDATE_CXLD(nos, ocr, idX, clt.nfr);
-		EXPECT_TRUE(clt.fill.leavesQty() == 0 && clt.fill.cumQty() == 6000 && clt.fill.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Canceled && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 6000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
-	//  Ack
+	//  Ack				(X)
 	//  Partial Fill	(X)
 	//  Cancel Request	(Y,X)
 	//  Partial Fill	(X)
@@ -127,35 +161,44 @@ struct TestSuiteB1 : public TestSuite
 		auto idX = epa.ClOrdId;
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
 		plasma.OnMsg(epa.get_new(idX));
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// fill 2000
 		plasma.OnMsg(epa.get_fill(idX, 2000, 99.98));
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == OrdStatus::Partially_Filled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 8000 && clt.exe.cumQty() == 2000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 2000 && clt.exe.lastPx() == 99.98);
+
 		// cancel request
 		auto ocr = clt.get_cxl(idX, nos);
 		plasma.OnMsg(ocr);
 		auto idY = epa.ClOrdId;
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
-
 		// fill 3000
 		plasma.OnMsg(epa.get_fill(idX, 3000, 99.98));
-		EXPECT_TRUE(clt.fill.status() == OrdStatus::Partially_Filled);
-		EXPECT_TRUE(clt.fill.clOrdId() == nos.clOrdId() && clt.fill.orderId() == idX);
-		EXPECT_TRUE(clt.fill.lastPx() == 99.98 && clt.fill.lastQty() == 3000);
-		EXPECT_TRUE(clt.fill.leavesQty() == 5000 && clt.fill.cumQty() == 5000 && clt.fill.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == OrdStatus::Partially_Filled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 5000 && clt.exe.cumQty() == 5000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 3000 && clt.exe.lastPx() == 99.98);
 		// pending cancel
 		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
-		EXPECT_TRUE(clt.nfr.status() == OrdStatus::Pending_Cancel);
-		EXPECT_TRUE(clt.nfr.origClOrdId() == nos.clOrdId() && clt.nfr.clOrdId() == ocr.clOrdId() && clt.nfr.orderId() == idX);
-		EXPECT_TRUE(clt.nfr.leavesQty() == 5000 && clt.nfr.cumQty() == 5000 && clt.nfr.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 5000 && clt.exe.cumQty() == 5000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// fill 5000
 		plasma.OnMsg(epa.get_fill(idX, 5000, 99.98));
-		EXPECT_TRUE(clt.fill.status() == OrdStatus::Pending_Cancel);
-		EXPECT_TRUE(clt.fill.clOrdId() == nos.clOrdId() && clt.fill.orderId() == idX);
-		EXPECT_TRUE(clt.fill.lastPx() == 99.98 && clt.fill.lastQty() == 5000);
-		EXPECT_TRUE(clt.fill.leavesQty() == 0 && clt.fill.cumQty() == 10000 && clt.fill.avgPx() == 99.98);
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 10000 && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 5000 && clt.exe.lastPx() == 99.98);
 		// reject
 		plasma.OnMsg(epa.get_rjt(idY, idX));
-		EXPECT_TRUE(clt.rjt.status() == OrdStatus::Filled);
-		EXPECT_TRUE(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
+		assert(clt.rjt.status() == OrdStatus::Filled);
+		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
@@ -176,11 +219,14 @@ struct TestSuiteB1 : public TestSuite
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// ack order
 		plasma.OnMsg(epa.get_new(idX));
-		VALIDATE_NEW(nos, idX, clt.nfr);
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
 		plasma.OnMsg(epa.get_rjt(idY, idX));
-		EXPECT_TRUE(clt.rjt.status() == OrdStatus::New);
-		EXPECT_TRUE(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
+		assert(clt.rjt.status() == OrdStatus::New);
+		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
@@ -207,7 +253,10 @@ struct TestSuiteB1 : public TestSuite
 		EXPECT_TRUE(clt.nfr.leavesQty() == 10000 && clt.nfr.cumQty() == 0 && clt.nfr.avgPx() == 0);
 		// ack order
 		plasma.OnMsg(epa.get_new(idX));
-		VALIDATE_NEW(nos, idX, clt.nfr);
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// accept cancel
 		plasma.OnMsg(epa.get_cxld(idY, idX));
 		EXPECT_TRUE(clt.nfr.status() == OrdStatus::Canceled);
@@ -262,7 +311,10 @@ struct TestSuiteB1 : public TestSuite
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// ack order
 		plasma.OnMsg(epa.get_new(idX));
-		VALIDATE_NEW(nos, idX, clt.nfr);
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// pending cancel
 		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
 		EXPECT_TRUE(clt.nfr.status() == OrdStatus::Pending_Cancel);

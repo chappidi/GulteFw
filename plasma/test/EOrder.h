@@ -54,7 +54,23 @@ struct EOrder final
 		_qty = req.qty();
 	}
 };
+static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) {
+	rpt.clOrdId(sts._clOrdId);
+	rpt.orderId(sts._ordId);
 
+	rpt.symbol(sts._symbol);
+	rpt.side(sts._side);
+	rpt.qty(sts._qty);
+
+	rpt.ordStatus(sts._status);
+	rpt.cumQty(sts._cumQty);
+	rpt.leavesQty(sts.leavesQty());
+	rpt.avgPx(sts._avgPx);
+
+	rpt.lastQty(0);
+	rpt.lastPx(0);
+	return rpt;
+}
 static NonFillReport& operator << (NonFillReport& ntr, const EOrder& sts) {
 	ntr.clOrdId(sts._clOrdId);
 	ntr.orderId(sts._ordId);

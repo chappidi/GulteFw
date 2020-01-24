@@ -19,36 +19,36 @@ struct Sink {
 	map<uint32_t, EOrder*> _oid2Ord;
 	uint32_t rpt_id = (ID << 24) + 8001;
 	auto get_pnd_new(uint32_t clOrdId) {
-		PROXY<NonFillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::Pending_New);
-		rpt.status(OrdStatus::Pending_New);
+		rpt.execType(ExecType::Pending_New);
+		rpt.ordStatus(OrdStatus::Pending_New);
 		return rpt;
 	}
 	auto get_new(uint32_t clOrdId) {
-		PROXY<NonFillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::New);
-		rpt.status(OrdStatus::New);
+		rpt.execType(ExecType::New);
+		rpt.ordStatus(OrdStatus::New);
 		return rpt;
 	}
 	auto get_rjt(uint32_t clOrdId) {
-		PROXY<NonFillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::Rejected);
-		rpt.status(OrdStatus::Rejected);
+		rpt.execType(ExecType::Rejected);
+		rpt.ordStatus(OrdStatus::Rejected);
 		rpt.leavesQty(0);
 		return rpt;
 	}
 	auto get_done(uint32_t clOrdId) {
-		PROXY<NonFillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::Done_For_Day);
-		rpt.status(OrdStatus::Done_For_Day);
+		rpt.execType(ExecType::Done_For_Day);
+		rpt.ordStatus(OrdStatus::Done_For_Day);
 		rpt.leavesQty(0);
 		return rpt;
 	}
@@ -62,12 +62,14 @@ struct Sink {
 		else {
 			sts._status = OrdStatus::Partially_Filled;
 		}
-		PROXY<FillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << sts;
+		rpt.execId(rpt_id++);
+		rpt.execType(ExecType::Trade);
 		rpt.lastQty(lastQty);
 		rpt.lastPx(lastPx);
 		if (sts._head_cxl != 0) {
-			rpt.status(OrdStatus::Pending_Cancel);
+			rpt.ordStatus(OrdStatus::Pending_Cancel);
 		}
 		return rpt;
 	}
@@ -75,8 +77,13 @@ struct Sink {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
 
+		// _head_cxl !=0 || _head_rpl != 0 only if pending_Cancel or pending_replace sent.
+		// otherwise it is 0.
+		// It is possible to reject cancel without sending pending_cxl or pending_rpl
+
 		// either a cxl or rpl reject
 		assert(orig._head_cxl != 0 || orig._head_rpl != 0);
+
 		// node to be deleted is first
 		if (orig._head_cxl == sts._ordId)
 			orig._head_cxl = sts._next;
@@ -118,15 +125,25 @@ struct Sink {
 		// set the new cancel as head
 		orig._head_cxl = sts._ordId;
 
-		PROXY<NonFillReport> rpt;
+		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[origClOrdId];
 		rpt.origClOrdId(origClOrdId);
 		rpt.clOrdId(clOrdId);
-//		rpt.orderId(ord_id++);
+		rpt.execId(rpt_id++);
+		rpt.execType(ExecType::Pending_Cancel);
+		rpt.ordStatus(OrdStatus::Pending_Cancel);
+		return rpt;
+	}
+	auto get_cxld(uint32_t clOrdId, uint32_t origClOrdId) {
+		PROXY<ExecutionReport> rpt;
+		rpt << *_clt2Ord[origClOrdId];
+		rpt.origClOrdId(origClOrdId);
+		rpt.clOrdId(clOrdId);
 
 		rpt.execId(rpt_id++);
-//		rpt.action(ExecType::Pending_Cancel);
-		rpt.status(OrdStatus::Pending_Cancel);
+		rpt.leavesQty(0);
+		rpt.execType(ExecType::Canceled);
+		rpt.ordStatus(OrdStatus::Canceled);
 		return rpt;
 	}
 	auto get_pnd_rpl(uint32_t clOrdId, uint32_t origClOrdId) {
@@ -154,19 +171,6 @@ struct Sink {
 		rpt.execId(rpt_id++);
 //		rpt.action(ExecType::Pending_Replace);
 		rpt.status(OrdStatus::Pending_Replace);
-		return rpt;
-	}
-	auto get_cxld(uint32_t clOrdId, uint32_t origClOrdId) {
-		PROXY<NonFillReport> rpt;
-		rpt << *_clt2Ord[origClOrdId];
-		rpt.origClOrdId(origClOrdId);
-		rpt.clOrdId(clOrdId);
-//		rpt.orderId(ord_id++);
-
-		rpt.execId(rpt_id++);
-		rpt.leavesQty(0);
-//		rpt.action(ExecType::Canceled);
-		rpt.status(OrdStatus::Canceled);
 		return rpt;
 	}
 	auto get_rpld(uint32_t clOrdId, uint32_t origClOrdId) {
