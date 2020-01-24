@@ -74,15 +74,26 @@ struct Sink {
 		return rpt;
 	}
 	auto get_rjt(uint32_t clOrdId, uint32_t origClOrdId) {
+		// cannot find the orig request
+		if (_clt2Ord.find(origClOrdId) == _clt2Ord.end()) {
+			// Reject
+			PROXY<OrderCancelReject> rjt;
+			rjt.clOrdId(clOrdId);
+			rjt.origClOrdId(origClOrdId);
+			rjt.status(OrdStatus::Rejected);
+			return rjt;
+		}
+
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
 
-		// _head_cxl !=0 || _head_rpl != 0 only if pending_Cancel or pending_replace sent.
-		// otherwise it is 0.
-		// It is possible to reject cancel without sending pending_cxl or pending_rpl
-
+		// if pending_cxl or pending_rpl not sent then sts._prev == orig._oidId
 		// either a cxl or rpl reject
-		assert(orig._head_cxl != 0 || orig._head_rpl != 0);
+		assert(sts._prev == orig._ordId || orig._head_cxl != 0 || orig._head_rpl != 0);
+
+		// if pending_cxl or pending_rpl not sent
+		if (sts._prev == orig._ordId)
+			sts._prev = 0;
 
 		// node to be deleted is first
 		if (orig._head_cxl == sts._ordId)
@@ -112,12 +123,14 @@ struct Sink {
 	auto get_pnd_cxl(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
+		// pointing to the orig req
+		assert(sts._prev != 0);
+		sts._prev = 0;		// reset it
 
 		// either first or existing current cxl does not have a chain
 		assert(orig._head_cxl == 0 || _oid2Ord[orig._head_cxl]->_prev == 0);
 
 		sts._next = orig._head_cxl;
-		assert(sts._prev == 0);
 		// there is a cancel req pending
 		if (orig._head_cxl != 0) {
 			_oid2Ord[orig._head_cxl]->_prev = sts._ordId;
@@ -135,6 +148,25 @@ struct Sink {
 		return rpt;
 	}
 	auto get_cxld(uint32_t clOrdId, uint32_t origClOrdId) {
+		EOrder& orig = *_clt2Ord[origClOrdId];
+		EOrder& sts = *_clt2Ord[clOrdId];
+
+		// node to be deleted is first
+		if (orig._head_cxl == sts._ordId)
+			orig._head_cxl = sts._next;
+		else if (orig._head_rpl == sts._ordId)
+			orig._head_rpl = sts._next;
+
+		// Change next only if node to be deleted is NOT the last node
+		if (sts._next != 0)
+			_oid2Ord[sts._next]->_prev = sts._prev;
+		// Change prev only if node to be deleted is NOT the first node
+		if (sts._prev != 0)
+			_oid2Ord[sts._prev]->_next = sts._next;
+
+		// change status
+		orig._status = OrdStatus::Canceled;
+
 		PROXY<ExecutionReport> rpt;
 		rpt << *_clt2Ord[origClOrdId];
 		rpt.origClOrdId(origClOrdId);
@@ -143,7 +175,6 @@ struct Sink {
 		rpt.execId(rpt_id++);
 		rpt.leavesQty(0);
 		rpt.execType(ExecType::Canceled);
-		rpt.ordStatus(OrdStatus::Canceled);
 		return rpt;
 	}
 	auto get_pnd_rpl(uint32_t clOrdId, uint32_t origClOrdId) {
@@ -211,7 +242,7 @@ public:
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
-		_clt2Ord[req.clOrdId()] = new EOrder(oid, req);
+		_clt2Ord[req.clOrdId()] = new EOrder(oid, req, *_clt2Ord[req.origClOrdId()]);
 		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
 		ClOrdId = req.clOrdId();
 	}
@@ -221,7 +252,7 @@ public:
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
-		_clt2Ord[req.clOrdId()] = new EOrder(oid, req);
+		_clt2Ord[req.clOrdId()] = new EOrder(oid, req, *_clt2Ord[req.origClOrdId()]);
 		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
 		ClOrdId = req.clOrdId();
 	}

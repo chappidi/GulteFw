@@ -40,13 +40,15 @@ struct EOrder final
 		_side = req.side();
 		_qty = req.qty();
 	}
-	explicit EOrder(uint32_t oid, const OrderCancelRequest& req)
+	explicit EOrder(uint32_t oid, const OrderCancelRequest& req, const EOrder& orig)
 		: _ordId(oid) {
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
+		// link to the original req
+		_prev = orig._ordId;
 	}
-	explicit EOrder(uint32_t oid, const OrderReplaceRequest& req)
+	explicit EOrder(uint32_t oid, const OrderReplaceRequest& req, const EOrder& orig)
 		: _ordId(oid) {
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
