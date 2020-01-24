@@ -49,6 +49,15 @@ OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderReplaceReques
 	return rjt;
 }
 
+DontKnowTrade& operator << (DontKnowTrade dkt, const ExecutionReport& rpt) {
+	dkt.orderId(rpt.orderId());
+	dkt.execId(rpt.execId());
+	dkt.symbol(rpt.symbol());
+	dkt.side(rpt.side());
+	dkt.reason(0);
+	return dkt;
+}
+
 DontKnowTrade& operator << (DontKnowTrade dkt, const NonFillReport& rpt) {
 	dkt.orderId(rpt.orderId());
 	dkt.execId(rpt.execId());

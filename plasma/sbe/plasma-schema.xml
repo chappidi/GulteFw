@@ -140,7 +140,7 @@
     <field name="qty"         id="8"  type="double" description="quantity to trade"/>
     <!-- execution fields -->
     <field name="execType"    id="9"  type="ExecType"  description="execution type"/>
-    <field name="status"      id="10" type="OrdStatus"  description="current status of order"/>
+    <field name="ordStatus"   id="10" type="OrdStatus"  description="current status of order"/>
     <field name="cumQty"      id="11" type="double"  description="cumulative quantity executed"/>
     <field name="leavesQty"   id="12" type="double"  description="leaves quantity"/>
     <field name="avgPx"       id="13" type="double"  description="execution average price"/>

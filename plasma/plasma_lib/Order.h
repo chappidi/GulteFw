@@ -51,7 +51,14 @@ struct Order final
 		_qty = req.qty();
 		_target = tgt;
 	}
-	void Update(const NonFillReport& rpt) 
+	void Update(const ExecutionReport& rpt)
+	{
+		_dstOrdId = rpt.orderId();
+		_status = rpt.ordStatus();
+		_cumQty = rpt.cumQty();
+		_avgPx = rpt.avgPx();
+	}
+	void Update(const NonFillReport& rpt)
 	{
 //		assert(_dstOrdId == rpt.orderId());
 		_dstOrdId = rpt.orderId();
@@ -67,7 +74,23 @@ struct Order final
 		_avgPx = rpt.avgPx();
 	}
 };
-static NonFillReport& operator << (NonFillReport& ntr, const Order& sts) 
+static ExecutionReport& operator << (ExecutionReport& rpt, const Order& sts)
+{
+	rpt.clOrdId(sts._srcOrdId);
+	rpt.orderId(sts._plsOrdId);
+
+	rpt.symbol(sts._symbol);
+	rpt.side(sts._side);
+	rpt.qty(sts._qty);
+	//populate execType outside
+	rpt.ordStatus(sts._status);
+	rpt.cumQty(sts._cumQty);
+	rpt.leavesQty(sts.leavesQty());
+	rpt.avgPx(sts._avgPx);
+	return rpt;
+}
+
+static NonFillReport& operator << (NonFillReport& ntr, const Order& sts)
 {
 	ntr.clOrdId(sts._srcOrdId);
 	ntr.orderId(sts._plsOrdId);

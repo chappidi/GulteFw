@@ -18,7 +18,7 @@ struct Sink {
 	map<uint32_t, EOrder*> _clt2Ord;
 	map<uint32_t, EOrder*> _oid2Ord;
 	uint32_t rpt_id = (ID << 24) + 8001;
-	NonFillReport get_pnd_new(uint32_t clOrdId) {
+	auto get_pnd_new(uint32_t clOrdId) {
 		PROXY<NonFillReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
@@ -26,7 +26,7 @@ struct Sink {
 		rpt.status(OrdStatus::Pending_New);
 		return rpt;
 	}
-	NonFillReport get_new(uint32_t clOrdId) {
+	auto get_new(uint32_t clOrdId) {
 		PROXY<NonFillReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
@@ -34,7 +34,7 @@ struct Sink {
 		rpt.status(OrdStatus::New);
 		return rpt;
 	}
-	NonFillReport get_rjt(uint32_t clOrdId) {
+	auto get_rjt(uint32_t clOrdId) {
 		PROXY<NonFillReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
@@ -43,7 +43,7 @@ struct Sink {
 		rpt.leavesQty(0);
 		return rpt;
 	}
-	NonFillReport get_done(uint32_t clOrdId) {
+	auto get_done(uint32_t clOrdId) {
 		PROXY<NonFillReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.execId(rpt_id++);
@@ -52,7 +52,7 @@ struct Sink {
 		rpt.leavesQty(0);
 		return rpt;
 	}
-	FillReport get_fill(uint32_t clOrdId, double lastQty, double lastPx) {
+	auto get_fill(uint32_t clOrdId, double lastQty, double lastPx) {
 		EOrder& sts = *_clt2Ord[clOrdId];
 		sts._avgPx = (sts._avgPx * sts._cumQty + lastQty * lastPx) / (sts._cumQty + lastQty);
 		sts._cumQty += lastQty;
@@ -71,7 +71,7 @@ struct Sink {
 		}
 		return rpt;
 	}
-	OrderCancelReject get_rjt(uint32_t clOrdId, uint32_t origClOrdId) {
+	auto get_rjt(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
 
@@ -102,7 +102,7 @@ struct Sink {
 		}
 		return rjt;
 	}
-	NonFillReport get_pnd_cxl(uint32_t clOrdId, uint32_t origClOrdId) {
+	auto get_pnd_cxl(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
 
@@ -129,7 +129,7 @@ struct Sink {
 		rpt.status(OrdStatus::Pending_Cancel);
 		return rpt;
 	}
-	NonFillReport get_pnd_rpl(uint32_t clOrdId, uint32_t origClOrdId) {
+	auto get_pnd_rpl(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
 
@@ -156,7 +156,7 @@ struct Sink {
 		rpt.status(OrdStatus::Pending_Replace);
 		return rpt;
 	}
-	NonFillReport get_cxld(uint32_t clOrdId, uint32_t origClOrdId) {
+	auto get_cxld(uint32_t clOrdId, uint32_t origClOrdId) {
 		PROXY<NonFillReport> rpt;
 		rpt << *_clt2Ord[origClOrdId];
 		rpt.origClOrdId(origClOrdId);
@@ -169,7 +169,7 @@ struct Sink {
 		rpt.status(OrdStatus::Canceled);
 		return rpt;
 	}
-	NonFillReport get_rpld(uint32_t clOrdId, uint32_t origClOrdId) {
+	auto get_rpld(uint32_t clOrdId, uint32_t origClOrdId) {
 		PROXY<NonFillReport> rpt;
 		rpt << *_clt2Ord[clOrdId];
 		rpt.origClOrdId(origClOrdId);

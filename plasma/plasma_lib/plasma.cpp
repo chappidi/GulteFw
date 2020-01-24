@@ -190,6 +190,53 @@ namespace plasma
 	}
 	//////////////////////////////////////////////////////////////////////
 	//
+	void OMS::OnMsg(const ExecutionReport& rpt) {
+		stringstream strm;
+		strm << "PLS:\t\tEXE[(" << rpt.clOrdId() << "," << rpt.origClOrdId() << ")-> " << rpt.orderId() << "]";
+			strm << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
+		strm << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
+		std::cout << strm.str() << std::endl;
+
+		ClientId cltId(rpt.execId());
+		ICallback* in = _out_os[cltId.instance()]._cb;
+		try {
+			// clOrdId of ExecutionReport == order index in _orders
+			// check the Order exists
+			if (rpt.clOrdId() == 0 || rpt.clOrdId() > _orders.size()
+				|| (rpt.origClOrdId() != 0 && rpt.origClOrdId() > _orders.size())) {
+				Wrap<DontKnowTrade> dkt;
+				dkt << rpt;
+				(*in).OnMsg(dkt);
+				return;
+			}
+			Order* orig = (rpt.origClOrdId() != 0) ? _orders[rpt.origClOrdId()] : nullptr;
+			Order* nxt = _orders[rpt.clOrdId()];
+			// step: validate
+			assert(nxt != nullptr);
+			assert(nxt->_symbol == rpt.symbol() && nxt->_side == rpt.side());
+			assert((orig == nullptr) || (orig->_symbol == nxt->_symbol && orig->_side == nxt->_side));
+
+			// when action = replace or cancel. orig != nullptr. 
+			// so next in chain has to be kept updated.
+			(*nxt).Update(rpt);
+			// send rpt out with updated status
+			ClientId clt(nxt->_srcOrdId);
+			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
+			{
+				Wrap<ExecutionReport> exe(rpt);
+				exe.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
+				exe.clOrdId(nxt->_srcOrdId);
+				exe.orderId((orig != nullptr) ? orig->_plsOrdId : nxt->_plsOrdId);
+				itr->second._cb->OnMsg(exe);
+			}
+		}
+		catch (exception & ex) {
+
+		}
+
+	}
+	//////////////////////////////////////////////////////////////////////
+	//
 	void OMS::OnMsg(const NonFillReport& rpt) {
 		stringstream strm;
 		strm << "PLS:\t\tNTR[" << rpt.clOrdId() << "/" << rpt.origClOrdId() << "/" << rpt.orderId() << "]";
