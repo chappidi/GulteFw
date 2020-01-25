@@ -3,13 +3,13 @@
 #include "EPA.h"
 #include <gtest/gtest.h>
 
-struct TestSuiteD1 : public testing::Test
+struct TestSuiteD2 : public testing::Test
 {
 	// declare variables
 	plasma::OMS plasma;
 	GUI clt;
 	EPA epa;
-	TestSuiteD1() {
+	TestSuiteD2() {
 		plasma.OnLogin(clt);
 		plasma.OnLogin(epa);
 	}
@@ -18,15 +18,11 @@ struct TestSuiteD1 : public testing::Test
 	//  Ack				(X)
 	//  Partial Fill	(X)
 	//  Replace Request	(Y,X)
-	//	Pending Replace	(Y,X)
-	//  Partial Fill	(X)
-	//	Replaced		(Y,X)
-	//  Partial Fill	(Y)
 	//  Replace Request	(Z,Y)
+	//	Pending Replace	(Y,X)
+	//	Replaced		(Y,X)
 	//	Pending Replace	(Z,Y)
-	//  Partial Fill	(Y)
 	//	Replaced		(Z,Y)
 	//  Partial Fill	(Z)
-	// https://www.onixs.biz/fix-dictionary/4.4/app_dD.1.a.html
-
+	// https://www.onixs.biz/fix-dictionary/4.4/app_dD.2.a.html
 };

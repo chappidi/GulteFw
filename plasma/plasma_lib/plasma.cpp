@@ -99,7 +99,7 @@ namespace plasma
 			}
 			Wrap<ExecutionReport> rpt;
 			rpt << *sts;
-//			rpt.action(ExecType::Order_Status);
+			rpt.execType(ExecType::Order_Status);
 			// if the order is replaced. then set the origClOrdId
 			if (sts->_srcOrdId != req.clOrdId())
 				rpt.origClOrdId(req.clOrdId());

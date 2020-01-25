@@ -52,6 +52,8 @@ struct EOrder final
 		_symbol = req.symbol();
 		_side = req.side();
 		_qty = req.qty();
+		// link to the original req
+		_prev = orig._ordId;
 	}
 };
 static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) {

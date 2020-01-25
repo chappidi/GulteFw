@@ -18,6 +18,7 @@ struct Wrap : public T {
 
 ExecutionReport& operator << (ExecutionReport& rpt, const OrderStatusRequest& osr)
 {
+	rpt.origClOrdId(0);
 	rpt.clOrdId(osr.clOrdId());
 	rpt.orderId(osr.orderId());
 	rpt.symbol(osr.symbol());
