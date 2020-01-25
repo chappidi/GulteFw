@@ -82,7 +82,7 @@ struct TestSuiteB2 : public testing::Test
 		assert(clt.exe.leavesQty() == 4000 && clt.exe.cumQty() == 6000 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 1000 && clt.exe.lastPx() == 99.98);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Pending_Cancel);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr1.clOrdId() && clt.rjt.orderId() == idX);
 		// fill 1500
@@ -92,7 +92,7 @@ struct TestSuiteB2 : public testing::Test
 		assert(clt.exe.leavesQty() == 2500 && clt.exe.cumQty() == 7500 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 1500 && clt.exe.lastPx() == 99.98);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idZ, idX));
+		plasma.OnMsg(epa.get_rjt(idZ, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Partially_Filled);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr2.clOrdId() && clt.rjt.orderId() == idX);
 	}
@@ -170,7 +170,7 @@ struct TestSuiteB2 : public testing::Test
 		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 6000 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idZ, idX));
+		plasma.OnMsg(epa.get_rjt(idZ, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Canceled);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr2.clOrdId() && clt.rjt.orderId() == idX);
 	}
@@ -251,11 +251,11 @@ struct TestSuiteB2 : public testing::Test
 		assert(clt.exe.leavesQty() == 4000 && clt.exe.cumQty() == 6000 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 1000 && clt.exe.lastPx() == 99.98);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idZ, idX));
+		plasma.OnMsg(epa.get_rjt(idZ, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Pending_Cancel);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr2.clOrdId() && clt.rjt.orderId() == idX);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idQ, idX));
+		plasma.OnMsg(epa.get_rjt(idQ, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Pending_Cancel);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr3.clOrdId() && clt.rjt.orderId() == idX);
 		// fill 1500
@@ -265,7 +265,7 @@ struct TestSuiteB2 : public testing::Test
 		assert(clt.exe.leavesQty() == 2500 && clt.exe.cumQty() == 7500 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 1500 && clt.exe.lastPx() == 99.98);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Partially_Filled);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr1.clOrdId() && clt.rjt.orderId() == idX);
 	}

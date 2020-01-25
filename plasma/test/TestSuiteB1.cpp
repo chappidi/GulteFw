@@ -44,7 +44,7 @@ struct TestSuiteB1 : public testing::Test
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::New);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	} 
@@ -197,7 +197,7 @@ struct TestSuiteB1 : public testing::Test
 		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 10000 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 5000 && clt.exe.lastPx() == 99.98);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Filled);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}
@@ -225,7 +225,7 @@ struct TestSuiteB1 : public testing::Test
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::New);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}
@@ -347,7 +347,7 @@ struct TestSuiteB1 : public testing::Test
 		auto idY = epa.ClOrdId;
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Rejected);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}

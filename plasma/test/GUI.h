@@ -24,24 +24,35 @@ public:
 		req.qty(qty);
 		return req;
 	}
-	auto get_cxl(uint32_t clOrdId, const NewOrderSingle& nos)
+	auto get_cxl(uint32_t ordId, const NewOrderSingle& nos)
 	{
 		PROXY<OrderCancelRequest> req;
 		req.clOrdId(req_id++);
 		req.origClOrdId(nos.clOrdId());
 		req.symbol(nos.symbol());
 		req.side(nos.side());
-		req.orderId(clOrdId);
+		req.orderId(ordId);
 		return req;
 	}
-	auto get_rpl(uint32_t clOrdId, double_t qty, const NewOrderSingle& nos)
+	auto get_rpl(uint32_t ordId, double_t qty, const NewOrderSingle& nos)
 	{
 		PROXY<OrderReplaceRequest> req;
 		req.clOrdId(req_id++);
 		req.origClOrdId(nos.clOrdId());
 		req.symbol(nos.symbol());
 		req.side(nos.side());
-		req.orderId(clOrdId);
+		req.orderId(ordId);
+		req.qty(qty);
+		return req;
+	}
+	auto get_rpl(uint32_t ordId, double_t qty, const OrderReplaceRequest& orr)
+	{
+		PROXY<OrderReplaceRequest> req;
+		req.clOrdId(req_id++);
+		req.origClOrdId(orr.clOrdId());
+		req.symbol(orr.symbol());
+		req.side(orr.side());
+		req.orderId(ordId);
 		req.qty(qty);
 		return req;
 	}

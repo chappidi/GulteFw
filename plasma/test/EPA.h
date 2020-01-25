@@ -73,7 +73,7 @@ struct Sink {
 		}
 		return rpt;
 	}
-	auto get_rjt(uint32_t clOrdId, uint32_t origClOrdId) {
+	auto get_rjt(uint32_t clOrdId, uint32_t origClOrdId, const std::string& rjtReason) {
 		// cannot find the orig request
 		if (_clt2Ord.find(origClOrdId) == _clt2Ord.end()) {
 			// Reject

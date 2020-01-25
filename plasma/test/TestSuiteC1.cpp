@@ -45,7 +45,7 @@ struct TestSuiteC1 : public testing::Test
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::New);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == orr.clOrdId() && clt.rjt.orderId() == idX);
 	}
@@ -147,7 +147,7 @@ struct TestSuiteC1 : public testing::Test
 		assert(clt.exe.leavesQty() == 8900 && clt.exe.cumQty() == 1100 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 100 && clt.exe.lastPx() == 99.98);
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX));
+		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::Partially_Filled);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == orr.clOrdId() && clt.rjt.orderId() == idX);
 	}
