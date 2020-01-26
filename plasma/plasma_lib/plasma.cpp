@@ -27,11 +27,8 @@ namespace plasma
 	//////////////////////////////////////////////////////////////////////
 	// 			New Order Request
 	// 			TODO: How to handle PossibleResend=Y flag
-	void OMS::OnMsg(const NewOrderSingle& req) {
-		stringstream strm;
-		strm << "PLS:\t\tNOS[" << ClientId(req.clOrdId()) << "]";
-		std::cout << strm.str() << std::endl;
-
+	void OMS::OnMsg(const NewOrderSingle& req) 
+	{
 		ClientId cltId(req.clOrdId());
 		XYZ& xyz = _out_os[cltId.instance()];
 		try
@@ -65,11 +62,8 @@ namespace plasma
 	//			Requesting a status of a order.
 	//			you could be asking for a status of a replaced orig order.
 	//			need to return the status of the last replacement
-	void OMS::OnMsg(const OrderStatusRequest& req) {
-		stringstream strm;
-		strm << "PLS:\t\tOSR[" << ClientId(req.clOrdId()) << " / " << req.orderId() << "]";
-		std::cout << strm.str() << std::endl;
-
+	void OMS::OnMsg(const OrderStatusRequest& req) 
+	{
 		ClientId cltId(req.clOrdId());
 		XYZ& xyz = _out_os[cltId.instance()];
 		try {
@@ -115,11 +109,8 @@ namespace plasma
 	//			Need to return OrderCancelReject (status = Rejected)
 	//		 - If order is found create a new Order
 	//			and forward the request out with new ids
-	void OMS::OnMsg(const OrderCancelRequest& req) {
-		stringstream strm;
-		strm << "PLS:\t\tOCR[" << ClientId(req.clOrdId()) << "/" << ClientId(req.origClOrdId()) << "/" << req.orderId() << "]";
-		std::cout << strm.str() << std::endl;
-
+	void OMS::OnMsg(const OrderCancelRequest& req) 
+	{
 		ClientId cltId(req.clOrdId());
 		XYZ& xyz = _out_os[cltId.instance()];
 		try
@@ -190,13 +181,8 @@ namespace plasma
 	}
 	//////////////////////////////////////////////////////////////////////
 	//
-	void OMS::OnMsg(const ExecutionReport& rpt) {
-		stringstream strm;
-		strm << "PLS:\t\tEXE[(" << rpt.clOrdId() << "," << rpt.origClOrdId() << ")-> " << rpt.orderId() << "]";
-			strm << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
-		strm << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
-		std::cout << strm.str() << std::endl;
-
+	void OMS::OnMsg(const ExecutionReport& rpt) 
+	{
 		ClientId cltId(rpt.execId());
 		ICallback* in = _out_os[cltId.instance()]._cb;
 		try {
@@ -248,12 +234,8 @@ namespace plasma
 	}
 	//////////////////////////////////////////////////////////////////////
 	//
-	void OMS::OnMsg(const OrderCancelReject& rpt) {
-		stringstream strm;
-		strm << "PLS:\t\tRJT[" << rpt.clOrdId() << "/" << rpt.origClOrdId() << "/" << rpt.orderId() << "]";
-		strm << OrdStatus::c_str(rpt.status());
-		std::cout << strm.str() << std::endl;
-
+	void OMS::OnMsg(const OrderCancelReject& rpt) 
+	{
 		try
 		{
 			if (rpt.clOrdId() == 0 || rpt.clOrdId() > _orders.size()

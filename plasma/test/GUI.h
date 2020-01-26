@@ -100,18 +100,18 @@ public:
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
 		stringstream strm;
-		strm << "\tGUI:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] ";
+		strm << "\tGUI:\tEXE[(" << ClientId(rpt.origClOrdId()) << "," << ClientId(rpt.clOrdId()) << ")-->" << rpt.orderId() << "] ";
 		stringstream  sts;
 		sts << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
 		stringstream  sQty;
 		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
 		//		std::cout << strm.str() << sQty.str() << std::endl;
-		printf("%20s %30s %20s\n", strm.str().c_str(), sts.str().c_str(), sQty.str().c_str());
+		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
 		exe = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;
-		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
+		strm << "\tGUI:\tRJT[" << ClientId(rpt.origClOrdId()) << "/" << ClientId(rpt.clOrdId()) << "/" << rpt.orderId() << "] ";
 		strm << OrdStatus::c_str(rpt.status());
 		std::cout << strm.str() << std::endl;
 		rjt = rpt;

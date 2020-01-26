@@ -244,7 +244,7 @@ public:
 	}
 	void OnMsg(const OrderCancelRequest& req) override {
 		stringstream strm;
-		strm << "\tEPA:\tOCR[" << req.clOrdId() << "/" << req.origClOrdId() << "/" << req.orderId() << "]";
+		strm << "\tEPA:\tOCR[(" << req.origClOrdId() << "," << req.clOrdId() << ")/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
@@ -254,7 +254,7 @@ public:
 	}
 	void OnMsg(const OrderReplaceRequest& req) override {
 		stringstream strm;
-		strm << "\tEPA:\tORR[" << req.clOrdId() << "/" << req.origClOrdId() << "/" << req.orderId() << "]";
+		strm << "\tEPA:\tORR[(" << req.origClOrdId() << "," << req.clOrdId() << ")/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
@@ -264,7 +264,7 @@ public:
 	}
 	void OnMsg(const OrderStatusRequest& req) override {
 		stringstream strm;
-		strm << "\tEPA:\tOSR[" << req.clOrdId() << "/ NA /" << req.orderId() << "]";
+		strm << "\tEPA:\tOSR[(" << req.clOrdId() << ")/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
 		ClOrdId = req.clOrdId();
 	}

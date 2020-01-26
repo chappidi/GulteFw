@@ -175,3 +175,10 @@ TEST_F(TestSuiteA1, nos_new_fill) {
 TEST_F(TestSuiteA1, nos_new_fill_done) {
 	nos_new_fill_done();
 }
+TEST_F(TestSuiteA1, all) {
+	nos_rjt();
+	nos_pnd_new_rjt();
+	nos_pnd_new_new_rjt();
+	nos_new_fill();
+	nos_new_fill_done();
+}

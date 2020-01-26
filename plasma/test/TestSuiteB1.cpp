@@ -347,7 +347,7 @@ struct TestSuiteB1 : public testing::Test
 		auto idY = epa.ClOrdId;
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// reject
-		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
+		plasma.OnMsg(epa.get_rjt(idY, idX, "Unknown Order"));
 		assert(clt.rjt.status() == OrdStatus::Rejected);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}
@@ -380,3 +380,14 @@ TEST_F(TestSuiteB1, cxl_rjt_unknwn) {
 	cxl_rjt_unknwn();
 }
 
+TEST_F(TestSuiteB1, all) {
+	nos_new_cxl_pnd_rjt();
+	nos_new_cxl_pnd_cxld();
+	nos_cxl_partfill_cxld();
+	nos_cxl_fill_rjt();
+	nos_cxl_new_rjt();
+	nos_cxl_pnd_new_cxld();
+	nos_cxl_pnd_cxld();
+	nos_cxl_new_pnd_cxld();
+	cxl_rjt_unknwn();
+}
