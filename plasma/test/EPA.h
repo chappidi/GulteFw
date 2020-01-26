@@ -19,36 +19,44 @@ struct Sink {
 	map<uint32_t, EOrder*> _oid2Ord;
 	uint32_t rpt_id = (ID << 24) + 8001;
 	auto get_pnd_new(uint32_t clOrdId) {
+		EOrder& sts = *_clt2Ord[clOrdId];
+		sts._status = OrdStatus::Pending_New;
+
 		PROXY<ExecutionReport> rpt;
-		rpt << *_clt2Ord[clOrdId];
+		rpt << sts;
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Pending_New);
-		rpt.ordStatus(OrdStatus::Pending_New);
 		return rpt;
 	}
 	auto get_new(uint32_t clOrdId) {
+		EOrder& sts = *_clt2Ord[clOrdId];
+		sts._status = OrdStatus::New;
+
 		PROXY<ExecutionReport> rpt;
-		rpt << *_clt2Ord[clOrdId];
+		rpt << sts;
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::New);
-		rpt.ordStatus(OrdStatus::New);
 		return rpt;
 	}
 	auto get_rjt(uint32_t clOrdId) {
+		EOrder& sts = *_clt2Ord[clOrdId];
+		sts._status = OrdStatus::Rejected;
+
 		PROXY<ExecutionReport> rpt;
-		rpt << *_clt2Ord[clOrdId];
+		rpt << sts;
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Rejected);
-		rpt.ordStatus(OrdStatus::Rejected);
 		rpt.leavesQty(0);
 		return rpt;
 	}
 	auto get_done(uint32_t clOrdId) {
+		EOrder& sts = *_clt2Ord[clOrdId];
+		sts._status = OrdStatus::Done_For_Day;
+
 		PROXY<ExecutionReport> rpt;
-		rpt << *_clt2Ord[clOrdId];
+		rpt << sts;
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Done_For_Day);
-		rpt.ordStatus(OrdStatus::Done_For_Day);
 		rpt.leavesQty(0);
 		return rpt;
 	}
@@ -62,6 +70,7 @@ struct Sink {
 		else {
 			sts._status = OrdStatus::Partially_Filled;
 		}
+
 		PROXY<ExecutionReport> rpt;
 		rpt << sts;
 		rpt.execId(rpt_id++);
@@ -211,15 +220,14 @@ struct Sink {
 		EOrder& sts = *_clt2Ord[clOrdId];
 
 		PROXY<ExecutionReport> rpt;
-		rpt << *_clt2Ord[clOrdId];
+		rpt << sts;
 		rpt.origClOrdId(origClOrdId);
 //		rpt.clOrdId(clOrdId);
 //		rpt.orderId(ord_id++);
 
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Replace);
-		//??? depends on the situation
-		rpt.ordStatus(OrdStatus::New);
+//		rpt.ordStatus(OrdStatus::New);
 		return rpt;
 	}
 };

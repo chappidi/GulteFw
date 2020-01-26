@@ -138,7 +138,7 @@ struct TestSuiteC1 : public testing::Test
 		plasma.OnMsg(epa.get_pnd_rpl(idY, idX));
 		assert(clt.exe.execType() == ExecType::Pending_Replace && clt.exe.ordStatus() == OrdStatus::Pending_Replace);
 		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == orr.clOrdId() && clt.exe.orderId() == idX);
-		assert(clt.exe.leavesQty() == 9000 && clt.exe.cumQty() == 1000 && clt.exe.avgPx() == 0);
+		assert(clt.exe.leavesQty() == 9000 && clt.exe.cumQty() == 1000 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// fill 100
 		plasma.OnMsg(epa.get_fill(idX, 100, 99.98));
@@ -190,7 +190,7 @@ struct TestSuiteC1 : public testing::Test
 		plasma.OnMsg(epa.get_pnd_rpl(idY, idX));
 		assert(clt.exe.execType() == ExecType::Pending_Replace && clt.exe.ordStatus() == OrdStatus::Pending_Replace);
 		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == orr.clOrdId() && clt.exe.orderId() == idX);
-		assert(clt.exe.leavesQty() == 9000 && clt.exe.cumQty() == 1000 && clt.exe.avgPx() == 0);
+		assert(clt.exe.leavesQty() == 9000 && clt.exe.cumQty() == 1000 && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// fill 100
 		plasma.OnMsg(epa.get_fill(idX, 100, 99.98));
@@ -225,8 +225,14 @@ TEST_F(TestSuiteC1, nos_new_rpl_pnd_rpld_fill) {
 	nos_new_rpl_pnd_rpld_fill();
 }
 TEST_F(TestSuiteC1, nos_new_fill_rpl_fill_rjt) {
-//	nos_new_fill_rpl_fill_rjt();
+	nos_new_fill_rpl_fill_rjt();
 }
 TEST_F(TestSuiteC1, nos_new_fill_rpl_fill_rpld_fill_fill) {
-//	nos_new_fill_rpl_fill_rpld_fill_fill();
+	nos_new_fill_rpl_fill_rpld_fill_fill();
+}
+TEST_F(TestSuiteC1, all) {
+	nos_new_rpl_pnd_rjt();
+	nos_new_rpl_pnd_rpld_fill();
+	nos_new_fill_rpl_fill_rjt();
+	nos_new_fill_rpl_fill_rpld_fill_fill();
 }
