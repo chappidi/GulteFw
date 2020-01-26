@@ -274,7 +274,6 @@ public:
 		stringstream strm;
 		strm << "\tEPA:\tOSR[(" << req.clOrdId() << ")/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
-		ClOrdId = req.clOrdId();
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
 		// EPA sends it. does not receive it 

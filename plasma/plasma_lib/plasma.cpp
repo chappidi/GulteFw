@@ -38,8 +38,8 @@ namespace plasma
 				// https://www.onixs.biz/fix-dictionary/4.4/app_dF.1.b.html
 				Wrap<ExecutionReport> rpt;
 				rpt << *sts;
-//				rpt.action((PossResent == true) ? ExecType::Order_Status : ExecType::Rejected);
-//				rpt.action(ExecType::Rejected);
+//				rpt.execType((PossResend == true) ? ExecType::Order_Status : ExecType::Rejected);
+				rpt.execType(ExecType::Rejected);
 				xyz._cb->OnMsg(rpt);
 				return;
 			}
@@ -93,7 +93,6 @@ namespace plasma
 			}
 			Wrap<ExecutionReport> rpt;
 			rpt << *sts;
-			rpt.execType(ExecType::Order_Status);
 			// if the order is replaced. then set the origClOrdId
 			if (sts->_srcOrdId != req.clOrdId())
 				rpt.origClOrdId(req.clOrdId());
@@ -127,7 +126,7 @@ namespace plasma
 			// Create Order. store it in _orders
 			//??? what is the status = NA ???
 			// I think it should be Pending_Cancel.  if a OrderStatusRequest comes what will be the status?
-			_orders.insert(_orders.end(), new Order(id, req, (*orig).target()));
+			_orders.insert(_orders.end(), new Order(id, req, *orig));
 			xyz._clnt2oms[req.clOrdId()] = id;
 			// step: publish new request to target
 			Wrap<OrderCancelRequest> ocr(req);
@@ -164,7 +163,7 @@ namespace plasma
 			auto id = _orders.size();
 			// Create Order. store it in _orders
 			//??? what is the status = NA
-			_orders.insert(_orders.end(), new Order(id, req, orig->target()));
+			_orders.insert(_orders.end(), new Order(id, req, *orig));
 			xyz._clnt2oms[req.clOrdId()] = id;
 			// step: publish new request to target
 			// I think it should be Pending_Replace.  if a OrderStatusRequest comes what will be the status?

@@ -9,9 +9,73 @@ struct TestSuiteB1 : public testing::Test
 	plasma::OMS plasma;
 	GUI clt;
 	EPA epa;
+	PROXY<NewOrderSingle>		nos;
+	PROXY<OrderStatusRequest>	osr;
+	PROXY<OrderCancelRequest>	ocr;
+	double						_execQty{ 0 };
+	OrdStatus::Value			_ordStatus{ OrdStatus::NA };
 	TestSuiteB1() {
+		// register
 		plasma.OnLogin(clt);
 		plasma.OnLogin(epa);
+
+		// create requests
+		nos = clt.get_nos(epa.id(), 10000);
+		osr = clt.get_sts(nos);
+	}
+	auto new_order() {
+		// New Order(X)	
+		plasma.OnMsg(nos);
+		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << epa.ClOrdId << "]" << std::endl;
+		// validate status
+		plasma.OnMsg(osr);
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::NA);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == epa.ClOrdId);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		return epa.ClOrdId;
+	}
+	void ack(uint32_t idX) {
+		_ordStatus = OrdStatus::New;
+		plasma.OnMsg(epa.get_new(idX));
+		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		// validate status
+		plasma.OnMsg(osr);
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	auto cxl_order(uint32_t idX) {
+		ocr = clt.get_cxl(idX, nos);
+
+		plasma.OnMsg(ocr);
+		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << epa.ClOrdId << "]" << std::endl;
+		// validate status
+		plasma.OnMsg(osr);
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+
+		return epa.ClOrdId;
+	}
+	void pnd_cxl(uint32_t idY, uint32_t idX) {
+		_ordStatus = OrdStatus::Pending_Cancel;
+		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
+		assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		// validate status
+		plasma.OnMsg(osr);
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
@@ -21,28 +85,30 @@ struct TestSuiteB1 : public testing::Test
 	//	Cancel Reject	(Y,X)
 	//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
 	void nos_new_cxl_pnd_rjt() {
-		// Send Order
-		auto nos = clt.get_nos(epa.id(), 10000);
-		plasma.OnMsg(nos);
-		auto idX = epa.ClOrdId;
+
+		auto idX = new_order();
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
 		// ack order
-		plasma.OnMsg(epa.get_new(idX));
-		assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
-		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
-		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
-		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		ack(idX);
+		//plasma.OnMsg(epa.get_new(idX));
+		//assert(clt.exe.execType() == ExecType::New && clt.exe.ordStatus() == OrdStatus::New);
+		//assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		//assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		//assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+
 		//cancel request
-		auto ocr = clt.get_cxl(idX, nos);
-		plasma.OnMsg(ocr);
-		auto idY = epa.ClOrdId;
-		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
+		auto idY = cxl_order(idX);
+		//auto ocr = clt.get_cxl(idX, nos);
+		//plasma.OnMsg(ocr);
+		//auto idY = epa.ClOrdId;
+		//std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << idY << "]" << std::endl;
 		// pending cxl ack
-		plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
-		assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
-		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
-		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
-		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		pnd_cxl(idY, idX);
+		//plasma.OnMsg(epa.get_pnd_cxl(idY, idX));
+		//assert(clt.exe.execType() == ExecType::Pending_Cancel && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
+		//assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		//assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		//assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// reject
 		plasma.OnMsg(epa.get_rjt(idY, idX, ""));
 		assert(clt.rjt.status() == OrdStatus::New);

@@ -17,60 +17,73 @@ struct Order final
 	uint32_t	_symbol;
 	Side::Value	_side;
 	uint8_t		_target;
-	// other details
-	OrdStatus::Value	_status = OrdStatus::NA;
 	double_t	_qty;
+	// other details
 	double_t	_cumQty{ 0 };
+	double_t	_leavesQty{ 0 };
 	double_t	_avgPx{ 0 };
+	OrdStatus::Value	_status = OrdStatus::NA;
 
 	inline uint8_t target() const { return _target; }
-
-	double_t leavesQty() const { return _qty - _cumQty; }
 
 	explicit Order(uint32_t id, const NewOrderSingle& req)
 		: _plsOrdId(id) {
 		_srcOrdId = req.clOrdId();
+		// economics
 		_symbol = req.symbol();
 		_side = req.side();
 		_qty = req.qty();
-		_target = req.target();
-		_avgPx = 0;
+		_target = req.target();	
+		// status
+		_leavesQty = _qty;
 	}
-	explicit Order(uint32_t id, const OrderCancelRequest& req, uint8_t tgt)
+	explicit Order(uint32_t id, const OrderCancelRequest& req, const Order& orig)
 		: _plsOrdId(id) {
 		_srcOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
-		_target = tgt;
+		_target = orig.target();
 	}
-	explicit Order(uint32_t id, const OrderReplaceRequest& req, uint8_t tgt)
+	explicit Order(uint32_t id, const OrderReplaceRequest& req, const Order& orig)
 		: _plsOrdId(id) {
 		_srcOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
 		_qty = req.qty();
-		_target = tgt;
+		_target = orig.target();
 	}
 	void Update(const ExecutionReport& rpt)
 	{
 		_dstOrdId = rpt.orderId();
 		_status = rpt.ordStatus();
 		_cumQty = rpt.cumQty();
+		_leavesQty = rpt.leavesQty();
 		_avgPx = rpt.avgPx();
 	}
 };
+/*
+	Generate a default execution status report from Order
+	Used when the OMS is needed to generate a ExecutionReport internally
+*/
 static ExecutionReport& operator << (ExecutionReport& rpt, const Order& sts)
 {
+	// set ids override as required
+	rpt.origClOrdId(0);
 	rpt.clOrdId(sts._srcOrdId);
 	rpt.orderId(sts._plsOrdId);
-
+	// economics
 	rpt.symbol(sts._symbol);
 	rpt.side(sts._side);
 	rpt.qty(sts._qty);
-	//populate execType outside
+
+	// default : override as required
+	rpt.execType(ExecType::Order_Status);	
 	rpt.ordStatus(sts._status);
 	rpt.cumQty(sts._cumQty);
-	rpt.leavesQty(sts.leavesQty());
+	rpt.leavesQty(sts._leavesQty);
 	rpt.avgPx(sts._avgPx);
+	// fill details
+	rpt.lastQty(0);
+	rpt.lastPx(0);
 	return rpt;
 }
