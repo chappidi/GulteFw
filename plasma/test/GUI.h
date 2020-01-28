@@ -67,6 +67,17 @@ public:
 		req.orderId((itr != _clt2ord.end()) ? itr->second : 0);
 		return req;
 	}
+	auto get_sts(const OrderCancelRequest& ocr)
+	{
+		PROXY<OrderStatusRequest> req;
+		req.clOrdId(ocr.clOrdId());
+		req.symbol(ocr.symbol());
+		req.side(ocr.side());
+		req.qty(ocr.qty());
+		auto itr = _clt2ord.find(ocr.clOrdId());
+		req.orderId((itr != _clt2ord.end()) ? itr->second : 0);
+		return req;
+	}
 	auto get_sts(const OrderReplaceRequest& orr)
 	{
 		PROXY<OrderStatusRequest> req;

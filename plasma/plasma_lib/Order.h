@@ -12,7 +12,7 @@ struct Order final
 	uint32_t	_srcOrdId;
 	uint32_t	_plsOrdId;
 	uint32_t	_dstOrdId{ 0 };
-	uint32_t	_rplOrdId{ 0 };  // next in replace chain
+	uint32_t	_origPlsOrdId{ 0 };
 	//order key
 	uint32_t	_symbol;
 	Side::Value	_side;
@@ -23,6 +23,14 @@ struct Order final
 	double_t	_leavesQty{ 0 };
 	double_t	_avgPx{ 0 };
 	OrdStatus::Value	_status = OrdStatus::NA;
+
+	// replaced by
+	uint32_t	_rpldOrdId{ 0 };  
+	// cancel and replace chaining
+	uint32_t	_head_lklt{ 0 };
+	// can be either cxl or rpl chain or none
+	uint32_t _next{ 0 };
+	uint32_t _prev{ 0 };
 
 	inline uint8_t target() const { return _target; }
 
@@ -37,15 +45,19 @@ struct Order final
 		// status
 		_leavesQty = _qty;
 	}
+	// OrderCancelReq = OrderReplaceRequest ( qty = 0)
 	explicit Order(uint32_t id, const OrderCancelRequest& req, const Order& orig)
 		: _plsOrdId(id) {
+		_origPlsOrdId = orig._plsOrdId;
 		_srcOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
+		_qty = 0;
 		_target = orig.target();
 	}
 	explicit Order(uint32_t id, const OrderReplaceRequest& req, const Order& orig)
 		: _plsOrdId(id) {
+		_origPlsOrdId = orig._plsOrdId;
 		_srcOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();

@@ -10,7 +10,6 @@ struct TestSuiteA1 : public testing::Test
 	GUI clt;
 	EPA epa;
 	PROXY<NewOrderSingle>		nos;
-	PROXY<OrderStatusRequest>	osr;
 	int32_t						idX{ 0 };
 	double						_execQty{ 0 };
 	OrdStatus::Value			_ordStatus{ OrdStatus::NA };
@@ -19,7 +18,6 @@ struct TestSuiteA1 : public testing::Test
 		plasma.OnLogin(epa);
 
 		nos = clt.get_nos(epa.id(), 10000);
-		osr = clt.get_sts(nos);
 
 	}
 	auto new_order() {
@@ -28,7 +26,7 @@ struct TestSuiteA1 : public testing::Test
 		idX = epa.ClOrdId;
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << idX << "]" << std::endl;
 		// validate status
-		plasma.OnMsg(osr);
+		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::NA);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
@@ -43,7 +41,7 @@ struct TestSuiteA1 : public testing::Test
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
-		plasma.OnMsg(osr);
+		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_New);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
@@ -57,7 +55,7 @@ struct TestSuiteA1 : public testing::Test
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
-		plasma.OnMsg(osr);
+		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::New);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == nos.qty() && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
@@ -71,7 +69,7 @@ struct TestSuiteA1 : public testing::Test
 		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
-		plasma.OnMsg(osr);
+		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Rejected);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
@@ -88,7 +86,7 @@ struct TestSuiteA1 : public testing::Test
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == qty && clt.exe.lastPx() == 99.98);
 		// validate status
-		plasma.OnMsg(osr);
+		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == 99.98);
@@ -102,7 +100,7 @@ struct TestSuiteA1 : public testing::Test
 		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == 99.98);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
-		plasma.OnMsg(osr);
+		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Done_For_Day);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == 99.98);

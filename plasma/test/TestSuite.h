@@ -11,7 +11,6 @@ struct TestSuite : public testing::Test
 	GUI clt;
 	EPA epa;
 	PROXY<NewOrderSingle>		nos;
-	PROXY<OrderStatusRequest>	osr;
 	PROXY<OrderCancelRequest>	ocr;
 	int32_t						idX{ 0 };
 	double						_execQty{ 0 };
@@ -23,7 +22,6 @@ struct TestSuite : public testing::Test
 
 		// create requests
 		nos = clt.get_nos(epa.id(), 10000);
-		osr = clt.get_sts(nos);
 		ocr = clt.get_cxl(idX, nos);
 	}
 };
