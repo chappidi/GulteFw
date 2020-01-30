@@ -107,6 +107,20 @@ struct TestSuiteA1 : public testing::Test
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 
 	}
+	void cxld() {
+		_ordStatus = OrdStatus::Canceled;
+		plasma.OnMsg(epa.get_cxld(idX));
+		assert(clt.exe.execType() == ExecType::Canceled && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		// validate status
+		plasma.OnMsg(clt.get_sts(nos));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == 99.98);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
 	void resend() {
 		double expected_leaves = nos.qty() - _execQty;
 		double avgPx = (_execQty != 0) ? 99.98 : 0;
@@ -183,11 +197,27 @@ public:
 	}
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
+	//  Ack				(X)
+	//	Fill			(X)
+	//	Fill			(X)
+	//  Cancelled		(X)
+	//	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
+	void nos_new_fill_cxld() {
+		new_order();
+		// ack order
+		ack();
+		// parital fill 1000
+		fill(1000);
+		// done for day
+		cxld();
+	}
+	///////////////////////////////////////////////////////////////
+	//  NewOrderSingle	(X)
 	//	Ack				(X)
 	//  NewOrderSingle	(X)
 	//	Fill			(X)
 	//  NewOrderSingle	(X)
-	//	https://www.onixs.biz/fix-dictionary/4.2/app_d22.html	
+	//	https://www.onixs.biz/fix-dictionary/4.4/app_dF.1.a.html
 	void nos_duplicate() {
 		new_order();
 		// ack order
@@ -215,6 +245,9 @@ TEST_F(TestSuiteA1, nos_new_fill) {
 }
 TEST_F(TestSuiteA1, nos_new_fill_done) {
 	nos_new_fill_done();
+}
+TEST_F(TestSuiteA1, nos_new_fill_cxld) {
+	nos_new_fill_cxld();
 }
 TEST_F(TestSuiteA1, nos_duplicate) {
 	nos_duplicate();

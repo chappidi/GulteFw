@@ -9,11 +9,13 @@ using namespace plasma::client;
 // terminal status = DoneForDay, Rejected, Replaced 
 struct Order final
 {
-	uint32_t	_srcOrdId;
+	// plasma ref id
 	uint32_t	_plsOrdId;
-	uint32_t	_dstOrdId{ 0 };
 	uint32_t	_origPlsOrdId{ 0 };
-	//order key
+	// external ref ids. upstream and downstream
+	uint32_t	_srcOrdId;
+	uint32_t	_dstOrdId{ 0 };
+	// economics
 	uint32_t	_symbol;
 	Side::Value	_side;
 	uint8_t		_target;
@@ -25,12 +27,7 @@ struct Order final
 	OrdStatus::Value	_status = OrdStatus::NA;
 
 	// replaced by
-	uint32_t	_rpldOrdId{ 0 };  
-	// cancel and replace chaining
-	uint32_t	_head_lklt{ 0 };
-	// can be either cxl or rpl chain or none
-	uint32_t _next{ 0 };
-	uint32_t _prev{ 0 };
+	uint32_t	_chain{ 0 };  
 
 	inline uint8_t target() const { return _target; }
 

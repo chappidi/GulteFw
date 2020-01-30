@@ -76,35 +76,29 @@ namespace plasma
 				xyz._cb->OnMsg(rpt);
 				return;
 			}
-			// we found one publish status.
 			// step: send the request out with correct sts object. 
-			// Do we need to do this ???
+			// we found one publish status request.
+			// we need to do this only if ordStatus == NA
 			if (auto tgt = _out_os.find((*sts).target()); tgt != _out_os.end()) {
 				Wrap<OrderStatusRequest> osr(req);
 				osr.clOrdId(sts->_plsOrdId);
 				osr.orderId(sts->_dstOrdId);
-
 				tgt->second._cb->OnMsg(osr);
 			}
 
-			if (sts->_status == OrdStatus::Pending_Cancel || sts->_status == OrdStatus::Pending_Replace)
-				sts = _orders[sts->_origPlsOrdId];
+			if (sts->_status == OrdStatus::Pending_Cancel || sts->_status == OrdStatus::Pending_Replace) {
+				if(sts->_origPlsOrdId != 0)
+					sts = _orders[sts->_origPlsOrdId];
+			}
 
 			auto oid = sts->_plsOrdId;
 			// step: publish the local status
 			// check if replaced find the last one.
-			while (sts->_rpldOrdId != 0) {
-				sts = _orders[sts->_rpldOrdId];
+			while (sts->_chain != 0) {
+				sts = _orders[sts->_chain];
 			}
 			Wrap<ExecutionReport> rpt;
 			rpt << *sts;
-			if (sts->_head_lklt != 0) {
-				rpt.clOrdId(_orders[sts->_head_lklt]->_srcOrdId);
-				if (_orders[sts->_head_lklt]->_qty != 0)
-					rpt.ordStatus(OrdStatus::Pending_Replace);
-				else
-					rpt.ordStatus(OrdStatus::Pending_Cancel);
-			}
 			// if the order is replaced. then set the origClOrdId
 			if (rpt.clOrdId() != req.clOrdId()) {
 				if (rpt.qty() == 0) {
@@ -136,6 +130,14 @@ namespace plasma
 				Wrap<OrderCancelReject> rjt;
 				rjt << req;
 				xyz._cb->OnMsg(rjt);
+				return;
+			}
+			// TODO: check if req.clOrdId() is duplicate. what to do ????
+			Order* sts = lookup(0, req.clOrdId());
+			if (sts != nullptr) {
+				assert(sts == nullptr);
+				// ???? If the req already exists
+				// TODO send a status message. Look at OrderStatusRequest()
 				return;
 			}
 			// get the id.
@@ -175,6 +177,14 @@ namespace plasma
 				return;
 			}
 			assert(orig->_side == req.side() && orig->_symbol == req.symbol());
+			// TODO: check if req.clOrdId() is duplicate. what to do ????
+			Order* sts = lookup(0, req.clOrdId());
+			if (sts != nullptr) {
+				assert(sts == nullptr);
+				// ???? If the req already exists
+				// TODO send a status message. Look at OrderStatusRequest()
+				return;
+			}
 
 			// get the id.
 			auto id = _orders.size();
@@ -218,57 +228,15 @@ namespace plasma
 			assert(nxt->_symbol == rpt.symbol() && nxt->_side == rpt.side());
 			assert((orig == nullptr) || (orig->_symbol == nxt->_symbol && orig->_side == nxt->_side));
 
-			switch (rpt.execType()) {
-			case ExecType::Pending_Cancel:
-			case ExecType::Pending_Replace:
-				nxt->_next = orig->_head_lklt;
-				// there is a cancel req pending
-				if (orig->_head_lklt != 0) {
-					_orders[orig->_head_lklt]->_prev = rpt.clOrdId(); // nxt->_plsOrdId;
-				}
-				orig->_head_lklt = rpt.clOrdId(); // nxt->_plsOrdId;
-				nxt->_status = rpt.ordStatus();
-				break;
-			case ExecType::Canceled:
-			case ExecType::Replace:
-				// node to be deleted is first
-				if (orig->_head_lklt == nxt->_plsOrdId)
-					orig->_head_lklt = nxt->_next;
-				// Change next only if node to be deleted is NOT the last node
-				if (nxt->_next != 0)
-					_orders[nxt->_next]->_prev = nxt->_prev;
-				// Change prev only if node to be deleted is NOT the first node
-				if (nxt->_prev != 0)
-					_orders[nxt->_prev]->_next = nxt->_next;
-
-				nxt->_status = rpt.ordStatus();
-				nxt->_cumQty = rpt.cumQty();
-				nxt->_avgPx = rpt.avgPx();
-				nxt->_leavesQty = rpt.leavesQty();
-
-				assert(orig->_rpldOrdId == 0);
-				orig->_rpldOrdId = nxt->_plsOrdId;
-				break;
-			case ExecType::Trade:
-				(*nxt).Update(rpt);
-				break;
-			default:
-				// TODO: update state
-				if (orig != nullptr) {
-					(*orig).Update(rpt);
-				}
-				// special case
-/*
-				if (rpt.action() == ExecType::Replace) {
-					(*orig)._status = OrdStatus::Replaced;
-					(*orig)._rplOrdId = (*nxt)._plsOrdId;
-				}
-*/
-				// when action = replace or cancel. orig != nullptr. 
-				// so next in chain has to be kept updated.
-				(*nxt).Update(rpt);
-				break;
+			// TODO: update state
+			if (orig != nullptr) {
+				orig->Update(rpt);
 			}
+			// if Replace or not unsolicitated cancel
+			if ((rpt.execType() == ExecType::Canceled && orig != nullptr) || rpt.execType() == ExecType::Replace) {
+				orig->_chain = nxt->_plsOrdId;
+			}
+			nxt->Update(rpt);
 			// send rpt out with updated status
 			ClientId clt(nxt->_srcOrdId);
 			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
@@ -303,16 +271,6 @@ namespace plasma
 			assert(orig != nullptr && sts != nullptr);
 			assert(sts->_symbol == orig->_symbol && sts->_side == orig->_side);
 			assert(sts->_symbol == rpt.symbol() && sts->_side == rpt.side());
-			// node to be deleted is first
-			if (orig->_head_lklt == sts->_plsOrdId)
-				orig->_head_lklt = sts->_next;
-			// Change next only if node to be deleted is NOT the last node
-			if (sts->_next != 0)
-				_orders[sts->_next]->_prev = sts->_prev;
-			// Change prev only if node to be deleted is NOT the first node
-			if (sts->_prev != 0)
-				_orders[sts->_prev]->_next = sts->_next;
-
 			// step: update status of both reqs
 			sts->_status = OrdStatus::Rejected;
 			orig->_status = rpt.status();

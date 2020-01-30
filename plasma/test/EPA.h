@@ -60,6 +60,17 @@ struct Sink {
 		rpt.leavesQty(0);
 		return rpt;
 	}
+	auto get_cxld(uint32_t clOrdId) {
+		EOrder& sts = *_clt2Ord[clOrdId];
+		sts._status = OrdStatus::Canceled;
+
+		PROXY<ExecutionReport> rpt;
+		rpt << sts;
+		rpt.execId(rpt_id++);
+		rpt.execType(ExecType::Canceled);
+		rpt.leavesQty(0);
+		return rpt;
+	}
 	auto get_fill(uint32_t clOrdId, double lastQty, double lastPx) {
 		EOrder& sts = *_clt2Ord[clOrdId];
 		sts._avgPx = (sts._avgPx * sts._cumQty + lastQty * lastPx) / (sts._cumQty + lastQty);
