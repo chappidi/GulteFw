@@ -12,12 +12,13 @@ struct EOrder final
 {
 	uint32_t	_clOrdId;
 	uint32_t	_ordId;
-	//order key
+	uint32_t	_origOrdId{ 0 };
+	//economics
 	uint32_t	_symbol;
 	Side::Value	_side;
-	// other details
-	OrdStatus::Value _status = OrdStatus::NA;
 	double_t	_qty;
+	// execution details
+	OrdStatus::Value _status = OrdStatus::NA;
 	double_t	_cumQty{ 0 };
 	double_t	_avgPx{ 0 };
 
@@ -40,20 +41,18 @@ struct EOrder final
 	}
 	explicit EOrder(uint32_t oid, const OrderCancelRequest& req, const EOrder& orig)
 		: _ordId(oid) {
+		_origOrdId = orig._ordId;
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
-		// link to the original req
-		_prev = orig._ordId;
 	}
 	explicit EOrder(uint32_t oid, const OrderReplaceRequest& req, const EOrder& orig)
 		: _ordId(oid) {
+		_origOrdId = orig._ordId;
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
 		_qty = req.qty();
-		// link to the original req
-		_prev = orig._ordId;
 	}
 };
 static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) {

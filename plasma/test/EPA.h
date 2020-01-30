@@ -96,14 +96,6 @@ struct Sink {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
 
-		// if pending_cxl or pending_rpl not sent then sts._prev == orig._oidId
-		// either a cxl or rpl reject
-		assert(sts._prev == orig._ordId || orig._head_cxl != 0 || orig._head_rpl != 0);
-
-		// if pending_cxl or pending_rpl not sent
-		if (sts._prev == orig._ordId)
-			sts._prev = 0;
-
 		// node to be deleted is first
 		if (orig._head_cxl == sts._ordId)
 			orig._head_cxl = sts._next;
@@ -120,7 +112,7 @@ struct Sink {
 		PROXY<OrderCancelReject> rjt;
 		rjt.clOrdId(clOrdId);
 		rjt << orig;
-		rjt.status((rjt.status() == OrdStatus::NA) ? OrdStatus::New : rjt.status());
+//		rjt.status((rjt.status() == OrdStatus::NA) ? OrdStatus::Pending_New : rjt.status());
 		if (orig._head_cxl != 0) {
 			rjt.status(OrdStatus::Pending_Cancel);
 		}
@@ -132,9 +124,6 @@ struct Sink {
 	auto get_pnd_cxl(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
-		// pointing to the orig req
-		assert(sts._prev != 0);
-		sts._prev = 0;		// reset it
 
 		// either first or existing current cxl does not have a chain
 		assert(orig._head_cxl == 0 || _oid2Ord[orig._head_cxl]->_prev == 0);
@@ -148,7 +137,7 @@ struct Sink {
 		orig._head_cxl = sts._ordId;
 
 		PROXY<ExecutionReport> rpt;
-		rpt << *_clt2Ord[origClOrdId];
+		rpt << *_clt2Ord[origClOrdId]; 
 		rpt.origClOrdId(origClOrdId);
 		rpt.clOrdId(clOrdId);
 		rpt.execId(rpt_id++);
@@ -189,9 +178,6 @@ struct Sink {
 	auto get_pnd_rpl(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
-		// pointing to the orig req
-		assert(sts._prev != 0);
-		sts._prev = 0;		// reset it
 
 		// either first or existing current rpl does not have a chain
 		assert(orig._head_rpl == 0 || _oid2Ord[orig._head_rpl]->_prev == 0);
@@ -273,7 +259,7 @@ public:
 	void OnMsg(const OrderStatusRequest& req) override {
 		stringstream strm;
 		strm << "\tEPA:\tOSR[(" << req.clOrdId() << ")/" << req.orderId() << "]";
-		std::cout << strm.str() << std::endl;
+//		std::cout << strm.str() << std::endl;
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
 		// EPA sends it. does not receive it 
