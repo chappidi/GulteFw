@@ -246,8 +246,6 @@ struct Sink {
 		EOrder& sts = *_clt2Ord[clOrdId];
 		// update sts with orig avgPx, cumQty, set status filled or partial_fill or new
 
-		// need to set the origOrdId. In a replace chain we need to carry forward origOrdId
-
 		PROXY<ExecutionReport> rpt;
 		rpt << sts;
 		rpt.origClOrdId(origClOrdId);

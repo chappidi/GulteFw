@@ -34,21 +34,24 @@ struct EOrder final
 
 	explicit EOrder(uint32_t oid, const NewOrderSingle& req)
 		: _ordId(oid) {
+		_origOrdId = oid;
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
 		_qty = req.qty();
 	}
+	// In a replace chain we need to carry forward origOrdId
 	explicit EOrder(uint32_t oid, const OrderCancelRequest& req, const EOrder& orig)
 		: _ordId(oid) {
-		_origOrdId = orig._ordId;
+		_origOrdId = orig._origOrdId;
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
 	}
+	// In a replace chain we need to carry forward origOrdId
 	explicit EOrder(uint32_t oid, const OrderReplaceRequest& req, const EOrder& orig)
 		: _ordId(oid) {
-		_origOrdId = orig._ordId;
+		_origOrdId = orig._origOrdId;
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
@@ -58,8 +61,7 @@ struct EOrder final
 static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) 
 {
 	rpt.clOrdId(sts._clOrdId);
-//	rpt.orderId((sts._origOrdId != 0) ? sts._ordId : sts._ordId);
-	rpt.orderId(sts._ordId);
+	rpt.orderId(sts._origOrdId);
 
 	rpt.symbol(sts._symbol);
 	rpt.side(sts._side);
@@ -77,8 +79,7 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts)
 static OrderCancelReject& operator << (OrderCancelReject& rjt, const EOrder& sts) 
 {
 	rjt.origClOrdId(sts._clOrdId);
-//	rjt.orderId((sts._origOrdId != 0) ? sts._ordId : sts._ordId);
-	rjt.orderId(sts._ordId);
+	rjt.orderId(sts._origOrdId);
 	rjt.symbol(sts._symbol);
 	rjt.side(sts._side);
 	rjt.status(sts._status);
