@@ -55,8 +55,10 @@ struct EOrder final
 		_qty = req.qty();
 	}
 };
-static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) {
+static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) 
+{
 	rpt.clOrdId(sts._clOrdId);
+//	rpt.orderId((sts._origOrdId != 0) ? sts._ordId : sts._ordId);
 	rpt.orderId(sts._ordId);
 
 	rpt.symbol(sts._symbol);
@@ -72,10 +74,11 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) {
 	rpt.lastPx(0);
 	return rpt;
 }
-static OrderCancelReject& operator << (OrderCancelReject& rjt, const EOrder& sts) {
+static OrderCancelReject& operator << (OrderCancelReject& rjt, const EOrder& sts) 
+{
 	rjt.origClOrdId(sts._clOrdId);
+//	rjt.orderId((sts._origOrdId != 0) ? sts._ordId : sts._ordId);
 	rjt.orderId(sts._ordId);
-
 	rjt.symbol(sts._symbol);
 	rjt.side(sts._side);
 	rjt.status(sts._status);

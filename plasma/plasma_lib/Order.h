@@ -42,20 +42,21 @@ struct Order final
 		// status
 		_leavesQty = _qty;
 	}
-	// OrderCancelReq = OrderReplaceRequest ( qty = 0)
 	explicit Order(uint32_t id, const OrderCancelRequest& req, const Order& orig)
 		: _plsOrdId(id) {
 		_origPlsOrdId = orig._plsOrdId;
 		_srcOrdId = req.clOrdId();
+		// economics
 		_symbol = req.symbol();
 		_side = req.side();
-		_qty = 0;
+		_qty = req.qty();
 		_target = orig.target();
 	}
 	explicit Order(uint32_t id, const OrderReplaceRequest& req, const Order& orig)
 		: _plsOrdId(id) {
 		_origPlsOrdId = orig._plsOrdId;
 		_srcOrdId = req.clOrdId();
+		// economics
 		_symbol = req.symbol();
 		_side = req.side();
 		_qty = req.qty();

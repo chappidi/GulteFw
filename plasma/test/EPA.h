@@ -244,16 +244,16 @@ struct Sink {
 	auto get_rpld(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
+		// update sts with orig avgPx, cumQty, set status filled or partial_fill or new
+
+		// need to set the origOrdId. In a replace chain we need to carry forward origOrdId
 
 		PROXY<ExecutionReport> rpt;
 		rpt << sts;
 		rpt.origClOrdId(origClOrdId);
-//		rpt.clOrdId(clOrdId);
 //		rpt.orderId(ord_id++);
-
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Replace);
-//		rpt.ordStatus(OrdStatus::New);
 		return rpt;
 	}
 };
