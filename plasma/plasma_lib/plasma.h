@@ -28,9 +28,10 @@ namespace plasma
 			_orders.push_back(nullptr);
 		}
 		void OnMsg(const NewOrderSingle& req);
-		void OnMsg(const OrderStatusRequest& req);
 		void OnMsg(const OrderCancelRequest& req);
 		void OnMsg(const OrderReplaceRequest& req);
+		void OnMsg(const OrderStatusRequest& req);
+
 		void OnMsg(const ExecutionReport& rpt);
 		void OnMsg(const OrderCancelReject& rpt);
 		void OnMsg(const DontKnowTrade& rpt);

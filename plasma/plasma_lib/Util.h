@@ -16,7 +16,7 @@ struct Wrap : public T {
 	}
 };
 
-ExecutionReport& operator << (ExecutionReport& rpt, const OrderStatusRequest& osr)
+static ExecutionReport& operator << (ExecutionReport& rpt, const OrderStatusRequest& osr)
 {
 	rpt.origClOrdId(0);
 	rpt.clOrdId(osr.clOrdId());
@@ -36,7 +36,7 @@ ExecutionReport& operator << (ExecutionReport& rpt, const OrderStatusRequest& os
 	return rpt;
 }
 
-OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderCancelRequest& req) {
+static OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderCancelRequest& req) {
 	rjt.origClOrdId(req.origClOrdId());
 	rjt.clOrdId(req.clOrdId());
 	rjt.orderId(req.orderId());
@@ -44,7 +44,7 @@ OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderCancelRequest
 //	rjt.time_stamp(0);
 	return rjt;
 }
-OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderReplaceRequest& req) {
+static OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderReplaceRequest& req) {
 	rjt.origClOrdId(req.origClOrdId());
 	rjt.clOrdId(req.clOrdId());
 	rjt.orderId(req.orderId());
@@ -53,7 +53,7 @@ OrderCancelReject& operator << (OrderCancelReject& rjt, const OrderReplaceReques
 	return rjt;
 }
 
-DontKnowTrade& operator << (DontKnowTrade dkt, const ExecutionReport& rpt) {
+static DontKnowTrade& operator << (DontKnowTrade dkt, const ExecutionReport& rpt) {
 	dkt.orderId(rpt.orderId());
 	dkt.execId(rpt.execId());
 	dkt.symbol(rpt.symbol());

@@ -59,62 +59,6 @@ namespace plasma
 		}
 	}
 	//////////////////////////////////////////////////////////////////////
-	//	Requesting a status of a request.
-	//	you could be asking for a status of a replaced orig order.
-	//	need to return the status of the last replacement
-	void OMS::OnMsg(const OrderStatusRequest& req)
-	{
-		ClientId cltId(req.clOrdId());
-		XYZ& xyz = _out_os[cltId.instance()];
-		try {
-			// get local status either by orderId or clOrdId
-			Order* sts = lookup(req.orderId(), req.clOrdId());
-			if (sts == nullptr) {
-				//https://www.onixs.biz/fix-dictionary/4.4/app_dG.1.a.html
-				Wrap<ExecutionReport> rpt;
-				rpt << req;
-				xyz._cb->OnMsg(rpt);
-				return;
-			}
-			// step: send the request out with correct sts object. 
-			// we found one publish status request.
-			// we need to do this only if ordStatus == NA
-			if (auto tgt = _out_os.find((*sts).target()); tgt != _out_os.end()) {
-				Wrap<OrderStatusRequest> osr(req);
-				osr.clOrdId(sts->_plsOrdId);
-				osr.orderId(sts->_dstOrdId);
-				tgt->second._cb->OnMsg(osr);
-			}
-
-			if (sts->_status == OrdStatus::Pending_Cancel || sts->_status == OrdStatus::Pending_Replace) {
-				if(sts->_origPlsOrdId != 0)
-					sts = _orders[sts->_origPlsOrdId];
-			}
-
-			auto oid = sts->_plsOrdId;
-			// step: publish the local status
-			// check if replaced find the last one.
-			while (sts->_chain != 0) {
-				sts = _orders[sts->_chain];
-			}
-			Wrap<ExecutionReport> rpt;
-			rpt << *sts;
-			// if the order is replaced. then set the origClOrdId
-			if (rpt.clOrdId() != req.clOrdId()) {
-				if (rpt.qty() == 0) {
-					rpt.qty(_orders[sts->_origPlsOrdId]->_qty);
-				}
-				rpt.orderId(oid);
-				rpt.origClOrdId(req.clOrdId());
-			}
-			xyz._cb->OnMsg(rpt);
-
-		}
-		catch (exception & ex) {
-
-		}
-	}
-	//////////////////////////////////////////////////////////////////////
 	//		 - possible scenario unknown order (sts == nullptr)
 	//			Need to return OrderCancelReject (status = Rejected)
 	//		 - If order is found create a new Order
@@ -206,6 +150,62 @@ namespace plasma
 		}
 	}
 	//////////////////////////////////////////////////////////////////////
+	//	Requesting a status of a request.
+	//	you could be asking for a status of a replaced orig order.
+	//	need to return the status of the last replacement
+	void OMS::OnMsg(const OrderStatusRequest& req)
+	{
+		ClientId cltId(req.clOrdId());
+		XYZ& xyz = _out_os[cltId.instance()];
+		try {
+			// get local status either by orderId or clOrdId
+			Order* sts = lookup(req.orderId(), req.clOrdId());
+			if (sts == nullptr) {
+				//https://www.onixs.biz/fix-dictionary/4.4/app_dG.1.a.html
+				Wrap<ExecutionReport> rpt;
+				rpt << req;
+				xyz._cb->OnMsg(rpt);
+				return;
+			}
+			// step: send the request out with correct sts object. 
+			// we found one publish status request.
+			// we need to do this only if ordStatus == NA
+			if (auto tgt = _out_os.find((*sts).target()); tgt != _out_os.end()) {
+				Wrap<OrderStatusRequest> osr(req);
+				osr.clOrdId(sts->_plsOrdId);
+				osr.orderId(sts->_dstOrdId);
+				tgt->second._cb->OnMsg(osr);
+			}
+
+			if (sts->_status == OrdStatus::Pending_Cancel || sts->_status == OrdStatus::Pending_Replace) {
+				if (sts->_origPlsOrdId != 0)
+					sts = _orders[sts->_origPlsOrdId];
+			}
+
+			auto oid = sts->_plsOrdId;
+			// step: publish the local status
+			// check if replaced find the last one.
+			while (sts->_chain != 0) {
+				sts = _orders[sts->_chain];
+			}
+			Wrap<ExecutionReport> rpt;
+			rpt << *sts;
+			// if the order is replaced. then set the origClOrdId
+			if (rpt.clOrdId() != req.clOrdId()) {
+				if (rpt.qty() == 0) {
+					rpt.qty(_orders[sts->_origPlsOrdId]->_qty);
+				}
+				rpt.orderId(oid);
+				rpt.origClOrdId(req.clOrdId());
+			}
+			xyz._cb->OnMsg(rpt);
+
+		}
+		catch (exception & ex) {
+
+		}
+	}
+	//////////////////////////////////////////////////////////////////////
 	//
 	void OMS::OnMsg(const ExecutionReport& rpt) 
 	{
@@ -232,7 +232,7 @@ namespace plasma
 			if (orig != nullptr) {
 				orig->Update(rpt);
 			}
-			// if Replace or not unsolicitated cancel
+			// if Replace or not Unsolicited cancel
 			if ((rpt.execType() == ExecType::Canceled && orig != nullptr) || rpt.execType() == ExecType::Replace) {
 				orig->_chain = nxt->_plsOrdId;
 			}
