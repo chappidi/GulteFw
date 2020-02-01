@@ -244,12 +244,14 @@ struct Sink {
 	auto get_rpld(uint32_t clOrdId, uint32_t origClOrdId) {
 		EOrder& orig = *_clt2Ord[origClOrdId];
 		EOrder& sts = *_clt2Ord[clOrdId];
-		// update sts with orig avgPx, cumQty, set status filled or partial_fill or new
+		// copy the execution details to sts
+		sts.Update(orig);
+		// terminal state
+		orig._status = OrdStatus::Replaced;
 
 		PROXY<ExecutionReport> rpt;
 		rpt << sts;
 		rpt.origClOrdId(origClOrdId);
-//		rpt.orderId(ord_id++);
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Replace);
 		return rpt;
@@ -276,7 +278,7 @@ public:
 	}
 	void OnMsg(const OrderCancelRequest& req) override {
 		stringstream strm;
-		strm << "\tEPA:\tOCR[(" << req.origClOrdId() << "," << req.clOrdId() << ")/" << req.orderId() << "]";
+		strm << "\tEPA:\tOCR[(" << req.clOrdId() << "," << req.origClOrdId() << ")/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
@@ -286,7 +288,7 @@ public:
 	}
 	void OnMsg(const OrderReplaceRequest& req) override {
 		stringstream strm;
-		strm << "\tEPA:\tORR[(" << req.origClOrdId() << "," << req.clOrdId() << ")/" << req.orderId() << "]";
+		strm << "\tEPA:\tORR[(" << req.clOrdId() << "," << req.origClOrdId() << ")/" << req.orderId() << "]";
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;

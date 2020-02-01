@@ -11,7 +11,7 @@
       <type name="schemaId" primitiveType="uint16"/>
       <type name="version" primitiveType="uint16"/>
     </composite>
-    <composite name="varStringEncoding" description="variable length string utf-8 charset">
+    <composite name="varString" description="variable length string utf-8 charset">
       <type name="length" primitiveType="uint16" />
       <type name="varData" length="0" primitiveType="uint8" characterEncoding="UTF-8"/>
     </composite>
@@ -57,6 +57,7 @@
     <field name="side"        id="4"  type="Side"   description="side of market"/>
     <field name="qty"         id="5"  type="double" description="quantity to trade"/>
     <field name="target"      id="6"  type="uint8"  description="target id"/>
+    <data  name="attributes"  id="7"  type="varString"  description="attributes and tags"/>
   </message>
   <message name="OrderStatusRequest"  id="2" description="Order Status Request">
     <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>
@@ -80,6 +81,7 @@
     <field name="symbol"      id="4"  type="uint32" description="security to be traded"/>
     <field name="side"        id="5"  type="Side"   description="side of market"/>
     <field name="qty"         id="6"  type="double" description="quantity to trade"/>
+    <data  name="attributes"  id="7"  type="varString"  description="attributes and tags"/>
   </message>
   <message name="OrderCancelReject"   id="5" description="Order Cancel Reject">
     <field name="clOrdId"     id="1"  type="uint32" description="one byte source id, three byte seq id"/>

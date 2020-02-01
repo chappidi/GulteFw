@@ -57,6 +57,11 @@ struct EOrder final
 		_side = req.side();
 		_qty = req.qty();
 	}
+	void Update(const EOrder& orig) {
+		_status = orig._status;
+		_cumQty = orig._cumQty;
+		_avgPx = orig._avgPx;
+	}
 };
 static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) 
 {

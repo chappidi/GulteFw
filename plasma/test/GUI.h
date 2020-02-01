@@ -31,6 +31,7 @@ public:
 		req.origClOrdId(nos.clOrdId());
 		req.symbol(nos.symbol());
 		req.side(nos.side());
+		req.qty(nos.qty());
 		req.orderId(ordId);
 		return req;
 	}
@@ -111,7 +112,7 @@ public:
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
 		stringstream strm;
-		strm << "\tGUI:\tEXE[(" << ClientId(rpt.origClOrdId()) << "," << ClientId(rpt.clOrdId()) << ")-->" << rpt.orderId() << "] ";
+		strm << "\tGUI:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] ";
 		stringstream  sts;
 		sts << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
 		stringstream  sQty;
@@ -122,7 +123,7 @@ public:
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;
-		strm << "\tGUI:\tRJT[" << ClientId(rpt.origClOrdId()) << "/" << ClientId(rpt.clOrdId()) << "/" << rpt.orderId() << "] ";
+		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
 		strm << OrdStatus::c_str(rpt.status());
 		std::cout << strm.str() << std::endl;
 		rjt = rpt;

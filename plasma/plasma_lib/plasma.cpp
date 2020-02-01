@@ -177,6 +177,7 @@ namespace plasma
 				tgt->second._cb->OnMsg(osr);
 			}
 
+			Wrap<ExecutionReport> rpt;
 			if (sts->_status == OrdStatus::Pending_Cancel || sts->_status == OrdStatus::Pending_Replace) {
 				if (sts->_origPlsOrdId != 0)
 					sts = _orders[sts->_origPlsOrdId];
@@ -188,13 +189,9 @@ namespace plasma
 			while (sts->_chain != 0) {
 				sts = _orders[sts->_chain];
 			}
-			Wrap<ExecutionReport> rpt;
 			rpt << *sts;
 			// if the order is replaced. then set the origClOrdId
 			if (rpt.clOrdId() != req.clOrdId()) {
-				if (rpt.qty() == 0) {
-					rpt.qty(_orders[sts->_origPlsOrdId]->_qty);
-				}
 				rpt.orderId(oid);
 				rpt.origClOrdId(req.clOrdId());
 			}

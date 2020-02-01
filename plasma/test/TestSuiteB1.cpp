@@ -147,13 +147,14 @@ struct TestSuiteB1 : public testing::Test
 		// validate status
 		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
-		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		// since it is pending, there could be multiple pending requests.
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
 		plasma.OnMsg(clt.get_sts(ocr));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_Cancel);
-		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}
