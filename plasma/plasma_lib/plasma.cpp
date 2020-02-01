@@ -150,6 +150,39 @@ namespace plasma
 		}
 	}
 	//////////////////////////////////////////////////////////////////////
+	//
+	void OMS::get_status(ExecutionReport& rpt, const Order& req) {
+		// Order is a cxl or rpl request which is still in pending state
+		if (req._origPlsOrdId != 0 && (req._status == OrdStatus::Pending_Cancel || req._status == OrdStatus::Pending_Replace)) {
+			Order& orig = *_orders[req._origPlsOrdId];
+			rpt << req;
+			// check if the orig order is still is same state 
+			if (orig._status == OrdStatus::Pending_Cancel || orig._status == OrdStatus::Pending_Replace) {
+				assert(orig._chain == 0);
+				rpt.orderId(orig._plsOrdId);
+				rpt.origClOrdId(orig._srcOrdId);
+			}
+			else {
+				// or moved on then reject
+				rpt.ordStatus(OrdStatus::Rejected);
+			}
+		} else {
+			const Order* sts = &req;
+			auto oid = req._plsOrdId;
+			// step: publish the local status
+			// check if replaced find the last one.
+			while (sts->_chain != 0) {
+				sts = _orders[sts->_chain];
+			}
+			rpt << *sts;
+			// if the order is replaced. then set the origClOrdId
+			if (rpt.clOrdId() != req._srcOrdId) {
+				rpt.orderId(oid);
+				rpt.origClOrdId(req._srcOrdId);
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////
 	//	Requesting a status of a request.
 	//	you could be asking for a status of a replaced orig order.
 	//	need to return the status of the last replacement
@@ -176,27 +209,9 @@ namespace plasma
 				osr.orderId(sts->_dstOrdId);
 				tgt->second._cb->OnMsg(osr);
 			}
-
 			Wrap<ExecutionReport> rpt;
-			if (sts->_status == OrdStatus::Pending_Cancel || sts->_status == OrdStatus::Pending_Replace) {
-				if (sts->_origPlsOrdId != 0)
-					sts = _orders[sts->_origPlsOrdId];
-			}
-
-			auto oid = sts->_plsOrdId;
-			// step: publish the local status
-			// check if replaced find the last one.
-			while (sts->_chain != 0) {
-				sts = _orders[sts->_chain];
-			}
-			rpt << *sts;
-			// if the order is replaced. then set the origClOrdId
-			if (rpt.clOrdId() != req.clOrdId()) {
-				rpt.orderId(oid);
-				rpt.origClOrdId(req.clOrdId());
-			}
+			get_status(rpt, *sts);
 			xyz._cb->OnMsg(rpt);
-
 		}
 		catch (exception & ex) {
 
@@ -270,6 +285,7 @@ namespace plasma
 			assert(sts->_symbol == rpt.symbol() && sts->_side == rpt.side());
 			// step: update status of both reqs
 			sts->_status = OrdStatus::Rejected;
+			sts->_avgPx = sts->_cumQty = sts->_leavesQty = 0;
 			orig->_status = rpt.status();
 			// step: publish 
 			ClientId clt(orig->_srcOrdId);

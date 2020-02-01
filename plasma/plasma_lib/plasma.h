@@ -21,6 +21,7 @@ namespace plasma
 		unordered_map<uint8_t, XYZ> _out_os;
 		vector<Order*> _orders;
 		Order* lookup(uint32_t orderId, uint32_t clOrdId);
+		void get_status(ExecutionReport& rpt, const Order& req);
 	public:
 		uint8_t id() { return 0; }
 		OMS() {
