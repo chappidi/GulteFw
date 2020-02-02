@@ -1,45 +1,6 @@
 #include "TestSuite.h"
 
-///////////////////////////////////////////////////////////////
-//  NewOrderSingle	(X)
-//  Reject			(X)
-//	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html
-TEST_F(TestSuite, nos_rjt) {
-	auto idX = new_order();
-	reject(idX);
-}
-///////////////////////////////////////////////////////////////
-//  NewOrderSingle	(X)
-//  Pending Ack		(X)
-//	Reject			(X)
-//	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html
-TEST_F(TestSuite, nos_pnd_rjt) {
-	auto idX = new_order();
-	pending_ack(idX);
-	reject(idX);
-}
-///////////////////////////////////////////////////////////////
-//  NewOrderSingle	(X)
-//  Pending Ack		(X)
-//  Ack				(X)
-//	Reject			(X)
-//	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html
-TEST_F(TestSuite, nos_pnd_ack_rjt) {
-	auto idX = new_order();
-	pending_ack(idX);
-	ack(idX);
-	reject(idX);
-}
-///////////////////////////////////////////////////////////////
-//  NewOrderSingle	(X)
-//  Ack				(X)
-//	Reject			(X)
-//	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html
-TEST_F(TestSuite, nos_ack_rjt) {
-	auto idX = new_order();
-	ack(idX);
-	reject(idX);
-}
+
 
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)

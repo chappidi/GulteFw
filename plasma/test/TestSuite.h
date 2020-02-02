@@ -27,7 +27,6 @@ struct TestSuite : public testing::Test
 		nos = clt.get_nos(epa.id(), 10000);
 	}
 	auto new_order() {
-		// New Order(X)	
 		plasma.OnMsg(nos);
 		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << epa.ClOrdId << "]" << std::endl;
 		// validate status
@@ -222,6 +221,66 @@ struct TestSuite : public testing::Test
 		plasma.OnMsg(clt.get_sts(orr));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_Replace);
 		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == orr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	void fill(uint32_t idX, double qty) {
+		_execQty += qty;
+		_ordStatus = (_execQty == nos.qty()) ? OrdStatus::Filled : OrdStatus::Partially_Filled;
+		double expected_leaves = nos.qty() - _execQty;
+		double avgPx = (_execQty != 0) ? 99.98 : 0;
+
+		// fill
+		plasma.OnMsg(epa.get_fill(idX, qty, 99.98));
+		assert(clt.exe.execType() == ExecType::Trade && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == qty && clt.exe.lastPx() == 99.98);
+		// validate status
+		plasma.OnMsg(clt.get_sts(nos));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	void done(uint32_t idX) {
+		_ordStatus = OrdStatus::Done_For_Day;
+		double avgPx = (_execQty != 0) ? 99.98 : 0;
+
+		plasma.OnMsg(epa.get_done(idX));
+		assert(clt.exe.execType() == ExecType::Done_For_Day && clt.exe.ordStatus() == OrdStatus::Done_For_Day);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		// validate status
+		plasma.OnMsg(clt.get_sts(nos));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Done_For_Day);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	void cxld(uint32_t idX) {
+		_ordStatus = OrdStatus::Canceled;
+		double avgPx = (_execQty != 0) ? 99.98 : 0;
+
+		plasma.OnMsg(epa.get_cxld(idX));
+		assert(clt.exe.execType() == ExecType::Canceled && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		// validate status
+		plasma.OnMsg(clt.get_sts(nos));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	void resend_nos(uint32_t idX) {
+		double expected_leaves = nos.qty() - _execQty;
+		double avgPx = (_execQty != 0) ? 99.98 : 0;
+		plasma.OnMsg(nos);
+		assert(clt.exe.execType() == ExecType::Rejected && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}

@@ -1,5 +1,5 @@
 ﻿
-add_executable( unit_tests TestSuiteA1.cpp 
+add_executable( unit_tests TestNewOrder.cpp 
 	TestSuiteRjt.cpp
 	TestSuiteB1.cpp TestSuiteB2.cpp 
 	TestSuiteC1.cpp 
