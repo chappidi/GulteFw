@@ -115,7 +115,7 @@ struct TestSuite : public testing::Test
 	void cxl_rjt(uint32_t idY, uint32_t idX, const std::string& reason) {
 		double expected_leaves = nos.qty() - _execQty;
 		double avgPx = (_execQty != 0) ? 99.98 : 0;
-		if (!stack.empty())
+		if (!stack.empty() && stack.top() == OrdStatus::Pending_Cancel)
 			stack.pop();
 		if (!stack.empty())
 			_ordStatus = stack.top();
@@ -226,7 +226,12 @@ struct TestSuite : public testing::Test
 	}
 	void fill(uint32_t idX, double qty) {
 		_execQty += qty;
-		_ordStatus = (_execQty == nos.qty()) ? OrdStatus::Filled : OrdStatus::Partially_Filled;
+		if (stack.top() == OrdStatus::Pending_Cancel || stack.top() == OrdStatus::Pending_Replace)
+			_ordStatus = stack.top();
+		else {
+			_ordStatus = (_execQty == nos.qty()) ? OrdStatus::Filled : OrdStatus::Partially_Filled;
+			stack.push(_ordStatus);
+		}
 		double expected_leaves = nos.qty() - _execQty;
 		double avgPx = (_execQty != 0) ? 99.98 : 0;
 

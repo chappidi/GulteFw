@@ -44,6 +44,8 @@ TEST_F(TestSuite, nos_ack_rjt) {
 //  NewOrderSingle	(X)
 //  Ack				(X)
 //	Fill			(X)
+//	Fill			(X)
+//	Fill			(X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html
 TEST_F(TestSuite, nos_ack_fill) {
 	auto idX = new_order();
@@ -75,8 +77,6 @@ TEST_F(TestSuite, nos_ack_fill_done) {
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
-//	Fill			(X)
-//	Fill			(X)
 //  Cancelled		(X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
 TEST_F(TestSuite, nos_ack_cxld) {
@@ -88,7 +88,6 @@ TEST_F(TestSuite, nos_ack_cxld) {
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
-//	Fill			(X)
 //	Fill			(X)
 //  Cancelled		(X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html

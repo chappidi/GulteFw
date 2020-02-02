@@ -166,22 +166,6 @@ struct TestSuiteB1 : public testing::Test
 	//  Ack				(X)
 	//	Fill			(X)
 	//  Cancel Request	(Y,X)
-	//	Cancel Reject	(Y,X)
-	//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
-	void nos_new_cxl_rjt() {
-		auto idX = new_order();
-		ack(idX);
-		fill(idX, 2000);
-		//cancel request
-		auto idY = cxl_order(idX);
-		// reject
-		cxl_rjt(idY, idX, "");
-	}
-	///////////////////////////////////////////////////////////////
-	//  NewOrderSingle	(X)
-	//  Ack				(X)
-	//	Fill			(X)
-	//  Cancel Request	(Y,X)
 	//	Canceled		(Y,X)
 	//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
 	void nos_new_cxl_cxld() {
@@ -193,25 +177,7 @@ struct TestSuiteB1 : public testing::Test
 		// accept cancel
 		cxld(idY, idX);
 	}
-	///////////////////////////////////////////////////////////////
-	//  NewOrderSingle	(X)
-	//  Ack				(X)
-	//	Fill			(X)
-	//  Cancel Request	(Y,X)
-	//	Pending Cxl		(Y,X)
-	//	Cancel Reject	(Y,X)
-	//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
-	void nos_new_cxl_pnd_rjt() {
 
-		auto idX = new_order();
-		ack(idX);
-		fill(idX, 2000);
-
-		//cancel request
-		auto idY = cxl_order(idX);
-		pending_cancel(idY, idX);
-		cxl_rjt(idY, idX, "");
-	} 
 	///////////////////////////////////////////////////////////////
 	//  NewOrderSingle	(X)
 	//  Ack				(X)
@@ -496,15 +462,9 @@ struct TestSuiteB1 : public testing::Test
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
 	}
 };
-TEST_F(TestSuiteB1, nos_new_cxl_rjt) {
-	nos_new_cxl_rjt();
-}
+
 TEST_F(TestSuiteB1, nos_new_cxl_cxld) {
 	nos_new_cxl_cxld();
-}
-
-TEST_F(TestSuiteB1, nos_new_cxl_pnd_rjt) {
-	nos_new_cxl_pnd_rjt();
 }
 TEST_F(TestSuiteB1, nos_new_cxl_pnd_cxld) {
 	nos_new_cxl_pnd_cxld();
@@ -530,3 +490,4 @@ TEST_F(TestSuiteB1, nos_cxl_new_pnd_cxld) {
 TEST_F(TestSuiteB1, cxl_rjt_unknwn) {
 	cxl_rjt_unknwn();
 }
+

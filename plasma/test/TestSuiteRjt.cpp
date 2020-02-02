@@ -1,7 +1,5 @@
 #include "TestSuite.h"
 
-
-
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Cancel Request	(Y,X)
@@ -9,6 +7,8 @@
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
 TEST_F(TestSuite, nos_cxl_rjt) {
 	auto idX = new_order();
+
+	//cancel request
 	auto idY = cxl_order(idX);
 	cxl_rjt(idY, idX, reason);
 }
@@ -20,6 +20,8 @@ TEST_F(TestSuite, nos_cxl_rjt) {
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
 TEST_F(TestSuite, nos_pnd_cxl_rjt) {
 	auto idX = new_order();
+
+	//cancel request
 	auto idY = cxl_order(idX);
 	pending_ack(idX);
 	cxl_rjt(idY, idX, reason);
@@ -33,6 +35,8 @@ TEST_F(TestSuite, nos_pnd_cxl_rjt) {
 TEST_F(TestSuite, nos_ack_cxl_rjt) {
 	auto idX = new_order();
 	ack(idX);
+
+	//cancel request
 	auto idY = cxl_order(idX);
 	cxl_rjt(idY, idX, reason);
 }
@@ -46,10 +50,72 @@ TEST_F(TestSuite, nos_ack_cxl_rjt) {
 TEST_F(TestSuite, nos_ack_cxl_pnd_rjt) {
 	auto idX = new_order();
 	ack(idX);
+
+	//cancel request
 	auto idY = cxl_order(idX);
 	pending_cancel(idY, idX);
 	cxl_rjt(idY, idX, reason);
 }
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//	Fill			(X)
+//  Cancel Request	(Y,X)
+//	Cancel Reject	(Y,X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
+TEST_F(TestSuite, nos_ack_fill_cxl_rjt) {
+	auto idX = new_order();
+	ack(idX);
+	fill(idX, 2000);
+
+	//cancel request
+	auto idY = cxl_order(idX);
+	cxl_rjt(idY, idX, reason);
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//	Fill			(X)
+//  Cancel Request	(Y,X)
+//	Pending Cxl		(Y,X)
+//	Cancel Reject	(Y,X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
+TEST_F(TestSuite, nos_ack_fill_cxl_pnd_rjt) {
+	auto idX = new_order();
+	ack(idX);
+	fill(idX, 2000);
+
+	//cancel request
+	auto idY = cxl_order(idX);
+	pending_cancel(idY, idX);
+	cxl_rjt(idY, idX, reason);
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Partial Fill	(X)
+//  Cancel Request	(Y,X)
+//  Partial Fill	(X)
+//	Pending Cxl		(Y,X)
+//  Filled			(X)
+//	Cancel Reject	(Y,X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.c.html
+TEST_F(TestSuite, nos_ack_fill_cxl_fill_pnd_fill_rjt) {
+	auto idX = new_order();
+	ack(idX);
+	fill(idX, 2000);
+
+	//cancel request
+	auto idY = cxl_order(idX);
+	fill(idX, 3000);
+	pending_cancel(idY, idX);
+	fill(idX, 5000);
+	cxl_rjt(idY, idX, reason);
+}
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////////
