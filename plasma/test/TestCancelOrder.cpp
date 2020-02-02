@@ -235,8 +235,97 @@ TEST_F(TestSuite, nos_cxl_ack_pnd_cxld) {
 TEST_F(TestSuite, cxl_rjt_unknwn) {
 	auto idX = 929;
 
+	//cancel request on unsent order
+	// plasma will reject it automatically
+	auto idY = cxl_order(idX);
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Partial Fill	(X)
+//  Cancel Request	(Y,X)
+//  Cancel Request	(Z,X)
+//  Partial Fill	(X)
+//  Pending	Cxl		(Y,X)
+//  Pending	Cxl		(Z,X)
+//  Partial Fill	(X)
+//	Cancel Reject	(Y,X)
+//  Partial Fill	(X)
+//	Cancel Reject	(Z,X)
+TEST_F(TestSuite, nos_fill_cxl_cxl_fill_rjt_fill_rjt) {
+	auto idX = new_order();
+	ack(idX);
+	fill(idX, 2000);
+
 	//cancel request
 	auto idY = cxl_order(idX);
-	cxl_rjt(idY, idX, OrdStatus::Rejected, "Unknown Order");
+	auto idZ = cxl_order(idX);
+	fill(idX, 3000);
+	pending_cancel(idY, idX);
+	pending_cancel(idZ, idX);
+	fill(idX, 1000);
+	cxl_rjt(idY, idX, reason);
+	fill(idX, 1500);
+	cxl_rjt(idZ, idX, reason);
 }
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Partial Fill	(X)
+//  Cancel Request	(Y,X)
+//  Cancel Request	(Z,X)
+//  Partial Fill	(X)
+//  Pending	Cxl		(Y,X)
+//  Pending	Cxl		(Z,X)
+//  Partial Fill	(X)
+//	Canceled		(Y,X)
+//	Cancel Reject	(Z,X)
+TEST_F(TestSuite, nos_fill_cxl_cxl_fill_cxld_rjt) {
+	auto idX = new_order();
+	ack(idX);
+	fill(idX, 2000);
 
+	//cancel request
+	auto idY = cxl_order(idX);
+	auto idZ = cxl_order(idX);
+	fill(idX, 3000);
+	pending_cancel(idY, idX);
+	pending_cancel(idZ, idX);
+	fill(idX, 1000);
+	cxld(idY, idX);
+	cxl_rjt(idZ, idX, OrdStatus::Canceled, reason);
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Partial Fill	(X)
+//  Cancel Request	(Y,X)
+//  Cancel Request	(Z,X)
+//  Cancel Request	(Q,X)
+//  Partial Fill	(X)
+//  Pending	Cxl		(Y,X)
+//  Partial Fill	(X)
+//  Pending	Cxl		(Z,X)
+//  Pending	Cxl		(Q,X)
+//	Cancel Reject	(Z,X)
+//	Cancel Reject	(Q,X)
+//	Partial Fill	(X)
+//	Cancel Reject	(Y,X)
+TEST_F(TestSuite, nos_cxl_cxl_cxl_fill_rjt_rjt_fill_rjt) {
+	auto idX = new_order();
+	ack(idX);
+	fill(idX, 2000);
+	//cancel request
+	auto idY = cxl_order(idX);
+	auto idZ = cxl_order(idX);
+	auto idQ = cxl_order(idX);
+	fill(idX, 2000);
+	pending_cancel(idY, idX);
+	fill(idX, 1000);
+	pending_cancel(idZ, idX);
+	pending_cancel(idQ, idX);
+	cxl_rjt(idZ, idX, OrdStatus::Pending_Cancel, reason);
+	cxl_rjt(idQ, idX, OrdStatus::Pending_Cancel, reason);
+	fill(idX, 1500);
+	cxl_rjt(idY, idX, OrdStatus::Partially_Filled, reason);
+}
