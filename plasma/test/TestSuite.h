@@ -87,6 +87,12 @@ struct TestSuite : public testing::Test
 		ocr = clt.get_cxl(idX, nos);
 		plasma.OnMsg(ocr);
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << epa.ClOrdId << "]" << std::endl;
+		// rejected by plasma
+		if (epa.ClOrdId == 0) {
+			_ordStatus = OrdStatus::Rejected;
+			idX = 0;
+			expected_leaves = 0;
+		}
 		// validate status
 		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
@@ -103,6 +109,9 @@ struct TestSuite : public testing::Test
 		orr = clt.get_rpl(idX, qty, nos);
 		plasma.OnMsg(orr);
 		std::cout << "[" << ClientId(orr.clOrdId()) << "-->" << epa.ClOrdId << "]" << std::endl;
+		if (epa.ClOrdId == 0) {
+			_ordStatus = OrdStatus::Rejected;
+		}
 		// validate status
 		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
@@ -112,6 +121,7 @@ struct TestSuite : public testing::Test
 
 		return epa.ClOrdId;
 	}
+	// TOBE_DELTED
 	void cxl_rjt(uint32_t idY, uint32_t idX, const std::string& reason) {
 		double expected_leaves = nos.qty() - _execQty;
 		double avgPx = (_execQty != 0) ? 99.98 : 0;
@@ -128,6 +138,35 @@ struct TestSuite : public testing::Test
 		plasma.OnMsg(epa.get_rjt(idY, idX, reason));
 		assert(clt.rjt.status() == _ordStatus);
 		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
+		// validate status
+		plasma.OnMsg(clt.get_sts(nos));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+
+		// validate status on cancel request
+		plasma.OnMsg(clt.get_sts(ocr));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Rejected);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idY);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == 0 && clt.exe.avgPx() == 0);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	void cxl_rjt(uint32_t idY, uint32_t idX, OrdStatus::Value ordSts, const std::string& reason) {
+		double expected_leaves = nos.qty() - _execQty;
+		double avgPx = (_execQty != 0) ? 99.98 : 0;
+		_ordStatus = ordSts;
+
+
+		plasma.OnMsg(epa.get_rjt(idY, idX, reason));
+		assert(clt.rjt.status() == _ordStatus);
+		assert(clt.rjt.origClOrdId() == nos.clOrdId() && clt.rjt.clOrdId() == ocr.clOrdId() && clt.rjt.orderId() == idX);
+
+		// cancel was rejected by plasma
+		if (idY == 0) {
+			idX = 0;
+			expected_leaves = 0;
+		}
 		// validate status
 		plasma.OnMsg(clt.get_sts(nos));
 		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
@@ -283,10 +322,35 @@ struct TestSuite : public testing::Test
 	void resend_nos(uint32_t idX) {
 		double expected_leaves = nos.qty() - _execQty;
 		double avgPx = (_execQty != 0) ? 99.98 : 0;
+
 		plasma.OnMsg(nos);
 		assert(clt.exe.execType() == ExecType::Rejected && clt.exe.ordStatus() == _ordStatus);
 		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+	}
+	void cxld(uint32_t idY, uint32_t idX) {
+		_ordStatus = OrdStatus::Canceled;
+		double expected_leaves = nos.qty() - _execQty;
+		double avgPx = (_execQty != 0) ? 99.98 : 0;
+
+		plasma.OnMsg(epa.get_cxld(idY, idX));
+		assert(clt.exe.execType() == ExecType::Canceled && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+		// validate status
+		plasma.OnMsg(clt.get_sts(nos));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == _ordStatus);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
+		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
+
+		// validate status on cancel request
+		plasma.OnMsg(clt.get_sts(ocr));
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Canceled);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == ocr.clOrdId() && clt.exe.orderId() == idY);
+		assert(clt.exe.leavesQty() == 0 && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}
 };
