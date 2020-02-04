@@ -1,7 +1,7 @@
 ﻿
 add_executable( unit_tests TestNewOrder.cpp 
-	TestSuiteRjt.cpp
 	TestCancelOrder.cpp
+	TestSuiteRjt.cpp
 	TestSuiteC1.cpp 
 	TestSuiteD1.cpp TestSuiteD2.cpp
 	TestSuiteG1.cpp)

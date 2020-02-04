@@ -57,22 +57,6 @@ TEST_F(TestSuite, nos_ack_cxl_rjt) {
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
-//  Cancel Request	(Y,X)
-//  Pending Cancel	(Y,X)
-//	Cancel Reject	(Y,X)
-//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
-TEST_F(TestSuite, nos_ack_cxl_pnd_rjt) {
-	auto idX = new_order();
-	ack(idX);
-
-	//cancel request
-	auto idY = cxl_order(idX);
-	pending_cancel(idY, idX);
-	cxl_rjt(idY, idX, reason);
-}
-///////////////////////////////////////////////////////////////
-//  NewOrderSingle	(X)
-//  Ack				(X)
 //	Fill			(X)
 //  Cancel Request	(Y,X)
 //	Cancel Reject	(Y,X)
@@ -84,6 +68,22 @@ TEST_F(TestSuite, nos_ack_fill_cxl_rjt) {
 
 	//cancel request
 	auto idY = cxl_order(idX);
+	cxl_rjt(idY, idX, reason);
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Cancel Request	(Y,X)
+//  Pending Cancel	(Y,X)
+//	Cancel Reject	(Y,X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
+TEST_F(TestSuite, nos_ack_cxl_pnd_rjt) {
+	auto idX = new_order();
+	ack(idX);
+
+	//cancel request
+	auto idY = cxl_order(idX);
+	pending_cancel(idY, idX);
 	cxl_rjt(idY, idX, reason);
 }
 ///////////////////////////////////////////////////////////////
@@ -124,7 +124,7 @@ TEST_F(TestSuite, nos_ack_fill_cxl_fill_pnd_fill_rjt) {
 	fill(idX, 3000);
 	pending_cancel(idY, idX);
 	fill(idX, 5000);
-	cxl_rjt(idY, idX, OrdStatus::Filled, reason);
+	cxl_rjt(idY, idX, reason);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -293,7 +293,7 @@ TEST_F(TestSuite, nos_fill_cxl_cxl_fill_cxld_rjt) {
 	pending_cancel(idZ, idX);
 	fill(idX, 1000);
 	cxld(idY, idX);
-	cxl_rjt(idZ, idX, OrdStatus::Canceled, reason);
+	cxl_rjt(idZ, idX, reason);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -324,8 +324,8 @@ TEST_F(TestSuite, nos_cxl_cxl_cxl_fill_rjt_rjt_fill_rjt) {
 	fill(idX, 1000);
 	pending_cancel(idZ, idX);
 	pending_cancel(idQ, idX);
-	cxl_rjt(idZ, idX, OrdStatus::Pending_Cancel, reason);
-	cxl_rjt(idQ, idX, OrdStatus::Pending_Cancel, reason);
+	cxl_rjt(idZ, idX, reason);
+	cxl_rjt(idQ, idX, reason);
 	fill(idX, 1500);
-	cxl_rjt(idY, idX, OrdStatus::Partially_Filled, reason);
+	cxl_rjt(idY, idX, reason);
 }
