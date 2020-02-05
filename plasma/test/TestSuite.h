@@ -393,7 +393,7 @@ struct TestSuite : public testing::Test
 		auto& orr = orrs[idY];
 		osv[idY][0] = osv[idX][0];
 		double avgPx = (_execQty != 0) ? 99.98 : 0;
-		double expected_leaves = nos.qty() - _execQty;
+		double expected_leaves = orr.qty() - _execQty;
 
 		//send epa response & check client report
 		plasma.OnMsg(epa.get_rpld(idY, idX));
@@ -403,15 +403,14 @@ struct TestSuite : public testing::Test
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
 		plasma.OnMsg(clt.get_sts(nos));
-		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_Replace);
-		// since it is pending, there could be multiple pending requests.
-		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == nos.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == orr.clOrdId() && clt.exe.orderId() == idX);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 		// validate status
 		plasma.OnMsg(clt.get_sts(orr));
-		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::Pending_Replace);
-		assert(clt.exe.origClOrdId() == nos.clOrdId() && clt.exe.clOrdId() == orr.clOrdId() && clt.exe.orderId() == idX);
+		assert(clt.exe.execType() == ExecType::Order_Status && clt.exe.ordStatus() == OrdStatus::New);
+		assert(clt.exe.origClOrdId() == 0 && clt.exe.clOrdId() == orr.clOrdId() && clt.exe.orderId() == idY);
 		assert(clt.exe.leavesQty() == expected_leaves && clt.exe.cumQty() == _execQty && clt.exe.avgPx() == avgPx);
 		assert(clt.exe.lastQty() == 0 && clt.exe.lastPx() == 0);
 	}

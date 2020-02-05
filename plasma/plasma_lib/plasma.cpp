@@ -171,7 +171,7 @@ namespace plasma
 			auto oid = req._plsOrdId;
 			// step: publish the local status
 			// check if replaced find the last one.
-			while (sts->_chain != 0 && sts->_status == OrdStatus::Replaced) {
+			while (sts->_chain != 0 && sts->_status != OrdStatus::Canceled) {
 				sts = _orders[sts->_chain];
 			}
 			rpt << *sts;
