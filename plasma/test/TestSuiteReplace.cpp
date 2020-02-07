@@ -1,4 +1,4 @@
-#include "TestSuite.h"
+#include "TestSuiteN.h"
 
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -6,11 +6,11 @@
 //	Replace Reject	(Y,X)
 // https://www.onixs.biz/fix-dictionary/4.4/app_dC.1.a.html
 TEST_F(TestSuite, nos_rpl_rjt) {
-	auto idX = new_order();
+	NewOrder idX(*this);
 
 	//replace request
-	auto idY = rpl_order(idX, 11000);
-	rpl_rjt(idY, idX, reason);
+	ReplaceOrder idY(idX, 11000);
+	idY.reject(reason);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -136,15 +136,15 @@ TEST_F(TestSuite, nos_ack_fill_rpl_fill_pnd_fill_rjt) {
 //  Partial Fill	(Y)
 // https://www.onixs.biz/fix-dictionary/4.4/app_dC.1.a.html
 TEST_F(TestSuite, nos_ack_rpl_pnd_rpld_fill) {
-	auto idX = new_order();
-	ack(idX);
+	NewOrder idX(*this);
+	idX.accept();
 
 	//replace request
-	auto idY = rpl_order(idX, 11000);
-	pending_replace(idY, idX);
-	replaced(idY, idX);
-	fill(idY, 1000);
-	fill(idY, 5000);
+	ReplaceOrder idY(idX, 11000);
+	idY.pending();
+	idY.accept();
+	idY.fill(1000);
+	idY.fill(5000);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -158,14 +158,14 @@ TEST_F(TestSuite, nos_ack_rpl_pnd_rpld_fill) {
 //  Partial Fill	(Y)
 // https://www.onixs.biz/fix-dictionary/4.4/app_dC.1.b.html
 TEST_F(TestSuite, nos_ack_fill_rpl_fill_rpld_fill_fill) {
-	auto idX = new_order();
-	ack(idX);
-	fill(idX, 2000);
+	NewOrder idX(*this);
+	idX.accept();
+	idX.fill(2000);
 
 	//replace request
-	auto idY = rpl_order(idX, 11000);
-	pending_replace(idY, idX);
-	fill(idX, 3000);
-	replaced(idY, idX);
-	fill(idY, 5000);
+	ReplaceOrder idY(idX, 11000);
+	idY.pending();
+	idX.fill(3000);
+	idY.accept();
+	idY.fill(5000);
 }

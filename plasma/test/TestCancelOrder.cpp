@@ -1,4 +1,4 @@
-#include "TestSuite.h"
+#include "TestSuiteN.h"
 
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -6,11 +6,11 @@
 //	Cancel Reject	(Y,X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.a.html
 TEST_F(TestSuite, nos_cxl_rjt) {
-	auto idX = new_order();
+	NewOrder idX(*this);
 
 	//cancel request
-	auto idY = cxl_order(idX);
-	cxl_rjt(idY, idX, reason);
+	CancelOrder idY(idX);
+	idY.reject(reason);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -19,12 +19,12 @@ TEST_F(TestSuite, nos_cxl_rjt) {
 //	Cancel Reject	(Y,X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dB.1.d.html
 TEST_F(TestSuite, nos_pnd_cxl_rjt) {
-	auto idX = new_order();
+	NewOrder idX(*this);
 
 	//cancel request
-	auto idY = cxl_order(idX);
-	pending_ack(idX);
-	cxl_rjt(idY, idX, reason);
+	CancelOrder idY(idX);
+	idX.pending();
+	idY.reject(reason);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -281,19 +281,19 @@ TEST_F(TestSuite, nos_fill_cxl_cxl_fill_rjt_fill_rjt) {
 //	Canceled		(Y,X)
 //	Cancel Reject	(Z,X)
 TEST_F(TestSuite, nos_fill_cxl_cxl_fill_cxld_rjt) {
-	auto idX = new_order();
-	ack(idX);
-	fill(idX, 2000);
+	NewOrder idX(*this);
+	idX.accept();
+	idX.fill(2000);
 
 	//cancel request
-	auto idY = cxl_order(idX);
-	auto idZ = cxl_order(idX);
-	fill(idX, 3000);
-	pending_cancel(idY, idX);
-	pending_cancel(idZ, idX);
-	fill(idX, 1000);
-	cxld(idY, idX);
-	cxl_rjt(idZ, idX, reason);
+	CancelOrder idY(idX);
+	CancelOrder idZ(idX);
+	idX.fill(3000);
+	idY.pending();
+	idZ.pending();
+	idX.fill(1000);
+	idY.accept();
+	idZ.reject(reason);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
@@ -312,20 +312,20 @@ TEST_F(TestSuite, nos_fill_cxl_cxl_fill_cxld_rjt) {
 //	Partial Fill	(X)
 //	Cancel Reject	(Y,X)
 TEST_F(TestSuite, nos_cxl_cxl_cxl_fill_rjt_rjt_fill_rjt) {
-	auto idX = new_order();
-	ack(idX);
-	fill(idX, 2000);
+	NewOrder idX(*this);
+	idX.accept();
+	idX.fill(2000);
 	//cancel request
-	auto idY = cxl_order(idX);
-	auto idZ = cxl_order(idX);
-	auto idQ = cxl_order(idX);
-	fill(idX, 2000);
-	pending_cancel(idY, idX);
-	fill(idX, 1000);
-	pending_cancel(idZ, idX);
-	pending_cancel(idQ, idX);
-	cxl_rjt(idZ, idX, reason);
-	cxl_rjt(idQ, idX, reason);
-	fill(idX, 1500);
-	cxl_rjt(idY, idX, reason);
+	CancelOrder idY(idX);
+	CancelOrder idZ(idX);
+	CancelOrder idQ(idX);
+	idX.fill(2000);
+	idY.pending();
+	idX.fill(1000);
+	idZ.pending();
+	idQ.pending();
+	idZ.reject(reason);
+	idQ.reject(reason);
+	idX.fill(1500);
+	idY.reject(reason);
 }

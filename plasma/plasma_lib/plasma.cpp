@@ -177,7 +177,7 @@ namespace plasma
 			rpt << *sts;
 			// if the order is replaced. then set the origClOrdId
 			if (rpt.clOrdId() != req._srcOrdId) {
-				rpt.orderId(oid);
+//				rpt.orderId(oid);
 				rpt.origClOrdId(req._srcOrdId);
 			}
 		}
@@ -256,7 +256,7 @@ namespace plasma
 				Wrap<ExecutionReport> exe(rpt);
 				exe.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
 				exe.clOrdId(nxt->_srcOrdId);
-				exe.orderId((orig != nullptr) ? orig->_plsOrdId : nxt->_plsOrdId);
+				exe.orderId((orig != nullptr && rpt.execType() != ExecType::Replace) ? orig->_plsOrdId : nxt->_plsOrdId);
 				itr->second._cb->OnMsg(exe);
 			}
 		}
