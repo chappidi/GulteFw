@@ -35,6 +35,17 @@ public:
 		req.orderId(ordId);
 		return req;
 	}
+	auto get_cxl(uint32_t ordId, const OrderReplaceRequest& orr)
+	{
+		PROXY<OrderCancelRequest> req;
+		req.clOrdId(req_id++);
+		req.origClOrdId(orr.clOrdId());
+		req.symbol(orr.symbol());
+		req.side(orr.side());
+		req.qty(orr.qty());
+		req.orderId(ordId);
+		return req;
+	}
 	auto get_rpl(uint32_t ordId, double_t qty, const NewOrderSingle& nos)
 	{
 		PROXY<OrderReplaceRequest> req;

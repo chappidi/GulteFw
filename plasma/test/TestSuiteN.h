@@ -36,32 +36,15 @@ struct NewOrder {
 		
 	}
 };
-struct CancelOrder {
-	TestSuite& _ts;
-	uint32_t idX;
-	uint32_t id;
-	CancelOrder(NewOrder& no) :_ts(no._ts), idX(no.id) {
-		id = _ts.cxl_order(idX);
-	}
-	void pending() {
-		_ts.pending_cancel(id, idX);
-	}
-	void accept() {
-		_ts.cxld(id, idX);
-	}
-	void reject(const string& reason) {
-		_ts.cxl_rjt(id, idX, reason);
-	}
-	void check() {
-
-	}
-};
 
 struct ReplaceOrder {
 	TestSuite& _ts;
 	uint32_t idX;
 	uint32_t id;
-	ReplaceOrder(NewOrder& no, double qty) :_ts(no._ts), idX(no.id) {
+	ReplaceOrder(const ReplaceOrder& ro, double qty) :_ts(ro._ts), idX(ro.id) {
+		id = _ts.rpl_order(idX, qty);
+	}
+	ReplaceOrder(const NewOrder& no, double qty) :_ts(no._ts), idX(no.id) {
 		id = _ts.rpl_order(idX, qty);
 	}
 	void pending() {
@@ -81,5 +64,28 @@ struct ReplaceOrder {
 	}
 	void canceled() {
 		_ts.cxld(id);
+	}
+};
+struct CancelOrder {
+	TestSuite& _ts;
+	uint32_t idX;
+	uint32_t id;
+	CancelOrder(const ReplaceOrder& ro) :_ts(ro._ts), idX(ro.id) {
+		id = _ts.cxl_order(idX);
+	}
+	CancelOrder(const NewOrder& no) :_ts(no._ts), idX(no.id) {
+		id = _ts.cxl_order(idX);
+	}
+	void pending() {
+		_ts.pending_cancel(id, idX);
+	}
+	void accept() {
+		_ts.cxld(id, idX);
+	}
+	void reject(const string& reason) {
+		_ts.cxl_rjt(id, idX, reason);
+	}
+	void check() {
+
 	}
 };

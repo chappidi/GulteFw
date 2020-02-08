@@ -169,3 +169,43 @@ TEST_F(TestSuite, nos_ack_fill_rpl_fill_rpld_fill_fill) {
 	idY.accept();
 	idY.fill(5000);
 }
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Partial Fill	(X)
+//  Replace Request	(Y,X)
+//	Pending Replace	(Y,X)
+//  Partial Fill	(X)
+//	Replaced		(Y,X)
+//  Partial Fill	(Y)
+//  Replace Request	(Z,Y)
+//	Pending Replace	(Z,Y)
+//  Partial Fill	(Y)
+//	Replaced		(Z,Y)
+//  Partial Fill	(Z)
+// https://www.onixs.biz/fix-dictionary/4.4/app_dD.1.a.html
+TEST_F(TestSuite, nos_rpl_rpld_rpl_rpld) {
+	NewOrder idX(*this);
+	idX.accept();
+	idX.fill(2000);
+
+	//replace request
+	ReplaceOrder idY(idX, 8000);
+	idY.pending();
+	idX.fill(1000);
+	idY.accept();
+	idY.fill(1500);
+
+	//replace request
+	ReplaceOrder idZ(idY, 7000);
+	idZ.pending();
+	idY.fill(1000);
+	idZ.accept();
+	idZ.fill(1500);
+
+	//cancel request
+	CancelOrder idQ(idZ);
+	idQ.pending();
+	idZ.fill(500);
+	idQ.accept();
+}
