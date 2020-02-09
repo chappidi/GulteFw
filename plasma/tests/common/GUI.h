@@ -1,5 +1,6 @@
 #pragma once
 #include "ICallback.h"
+#include <sstream>
 
 using namespace std;
 using namespace plasma::client;

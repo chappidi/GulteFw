@@ -1,43 +1,6 @@
 #pragma once
-#include <plasma.h>
-#include <Thor.h>
-#include <GUI.h>
-#include <MLS.h>
-#include <EPA.h>
-#include <gtest/gtest.h>
-#include <stack>
+#include <TestSuite.h>
 #include <messages.h>
-
-/////////////////////////////////////////////////////////////////////////
-//
-//
-struct TestSuite : public testing::Test
-{
-	plasma::OMS oms;
-	GUI gui;
-	EPA epa;
-	// register
-	TestSuite() { 
-		oms.OnLogin(gui); 
-		oms.OnLogin(epa); 
-	}
-};
-/////////////////////////////////////////////////////////////////////////
-//
-//
-struct TestSuiteV2 : public testing::Test
-{
-	plasma::OMS_V2 oms;
-	GUI gui;
-	MLS mls;
-	EPA epa;
-	// register
-	TestSuiteV2() { 
-		oms.OnLogin(gui); 
-		oms.OnLogin(mls); 
-		oms.OnLogin(epa); 
-	}
-};
 /////////////////////////////////////////////////////////////////////////
 //
 //
@@ -99,11 +62,14 @@ struct OrderReq {
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 };
+/////////////////////////////////////////////////////////////////////////
+//
+//
 template<typename PLASMA>
 struct ChildOrderReq : public OrderReq<PLASMA> {
 	const OrderReq& _prnt;
 	ChildOrderReq(const OrderReq& prnt, ITarget& tgt, double qty)
-		:OrderReq(prnt.oms, dynamic_cast<ISource&>(prnt._tgt), tgt, qty, prnt.oms_id), 
+		:OrderReq(prnt.oms, dynamic_cast<ISource&>(prnt._tgt), tgt, qty, prnt.oms_id),
 		_prnt(prnt) {
 		// blank
 	}
@@ -112,6 +78,9 @@ struct ChildOrderReq : public OrderReq<PLASMA> {
 		_prnt.check();
 	}
 };
+/////////////////////////////////////////////////////////////////////////
+//
+//
 struct ReplaceReq {
 	void pending() {
 	}
@@ -126,7 +95,9 @@ struct ReplaceReq {
 	void canceled() {
 	}
 };
-
+/////////////////////////////////////////////////////////////////////////
+//
+//
 struct CancelReq {
 	void pending() {
 	}
@@ -135,3 +106,4 @@ struct CancelReq {
 	void reject() {
 	}
 };
+
