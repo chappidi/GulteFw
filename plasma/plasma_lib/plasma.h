@@ -12,7 +12,7 @@ using namespace plasma::client;
 
 namespace plasma
 {
-	class OMS final
+	class OMS final : public ICallback
 	{
 		struct XYZ {
 			ICallback* _cb;

@@ -14,7 +14,7 @@ using namespace plasma::client;
 namespace plasma
 {
 
-	class OMS_V2 final
+	class OMS_V2 final : public ICallback
 	{
 		struct XYZ {
 			ICallback* _cb;

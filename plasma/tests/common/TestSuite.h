@@ -19,6 +19,9 @@ struct TestSuite : public testing::Test
 		oms.OnLogin(gui); 
 		oms.OnLogin(epa); 
 	}
+	auto new_order(double qty) {
+		return 0;
+	}
 };
 /////////////////////////////////////////////////////////////////////////
 //
@@ -34,5 +37,8 @@ struct TestSuiteV2 : public testing::Test
 		oms.OnLogin(gui); 
 		oms.OnLogin(mls); 
 		oms.OnLogin(epa); 
+	}
+	auto new_order(ITarget& tgt, double qty) {
+		return 0;
 	}
 };
