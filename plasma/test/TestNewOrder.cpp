@@ -1,6 +1,15 @@
 #include "TestSuiteN.h"
 
 ///////////////////////////////////////////////////////////////
+//
+TEST_F(TestSuite, SIZE) {
+	std::cout << "sizeof(size_t) " << sizeof(size_t) << std::endl;
+	std::cout << "sizeof(NewOrderSingle) " << sizeof(NewOrderSingle) << std::endl;
+	std::cout << "sizeof(OrderReplaceRequest) " << sizeof(OrderReplaceRequest) << std::endl;
+	std::cout << "sizeof(ExecutionReport) " << sizeof(ExecutionReport) << std::endl;
+	std::cout << "sizeof(Order) " << sizeof(Order) << std::endl << std::endl;
+}
+///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Reject			(X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html

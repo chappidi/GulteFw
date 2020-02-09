@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
+#pragma once
 #include "ICallback.h"
-#include "Order.h"
+#include "OrderV2.h"
 #include <iostream>
 #include <sstream>
 #include <cassert>
@@ -12,19 +13,20 @@ using namespace plasma::client;
 
 namespace plasma
 {
-	class OMS final
+
+	class OMS_V2 final
 	{
 		struct XYZ {
 			ICallback* _cb;
 			map<uint32_t, uint32_t > _clnt2oms;
 		};
 		unordered_map<uint8_t, XYZ> _out_os;
-		vector<Order*> _orders;
-		Order* lookup(uint32_t orderId, uint32_t clOrdId);
-		void get_status(ExecutionReport& rpt, const Order& req);
+		vector<OrderV2*> _orders;
+		OrderV2* lookup(uint32_t orderId, uint32_t clOrdId);
+		void get_status(ExecutionReport& rpt, const OrderV2& req);
 	public:
 		uint8_t id() { return 0; }
-		OMS() {
+		OMS_V2() {
 			// dummy order.
 			_orders.push_back(nullptr);
 		}
