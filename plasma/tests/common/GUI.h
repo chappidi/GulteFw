@@ -1,5 +1,6 @@
 #pragma once
 #include "ICallback.h"
+#include "messages.h"
 #include <sstream>
 
 using namespace std;
@@ -7,11 +8,18 @@ using namespace plasma::client;
 /////////////////////////////////////////////////////////////////////////
 //
 //
-class GUI final : public plasma::ICallback 
+class GUI final : public ISource, public plasma::ICallback
 {
 	static const uint8_t ID = 5;
+	uint32_t req_id = (ID << 24) + 7001;
+	PROXY<ExecutionReport>	exe;
+	PROXY<OrderCancelReject> rjt;
 public:
-	uint8_t id() { return ID; }
+	uint32_t req_seq_no()	{ return req_id++; }
+	uint8_t  id()			{ return ID; }
+	const ExecutionReport& execRpt() { return exe; }
+	const OrderCancelReject& cxlRjt() { return rjt; }
+
 	void OnMsg(const NewOrderSingle& req) override {
 		// Never receives it
 	}
@@ -33,14 +41,14 @@ public:
 		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
 		//		std::cout << strm.str() << sQty.str() << std::endl;
 		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
-//		exe = rpt;
+		exe = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;
 		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
 		strm << OrdStatus::c_str(rpt.status());
 		std::cout << strm.str() << std::endl;
-//		rjt = rpt;
+		rjt = rpt;
 	}
 	void OnMsg(const DontKnowTrade& rpt) override {
 		// Never receives it

@@ -1,11 +1,6 @@
 #pragma once
-#include <plasma_client/NewOrderSingle.h>
-#include <plasma_client/OrderCancelRequest.h>
-#include <plasma_client/OrderReplaceRequest.h>
-#include <plasma_client/OrderStatusRequest.h>
-#include <plasma_client/OrderCancelReject.h>
-#include <plasma_client/DontKnowTrade.h>
 #include <memory>
+#include <cassert>
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -32,4 +27,20 @@ struct PROXY : public T {
 		memcpy(data.get(), rhs.buffer(), rhs.bufferLength());
 		return *this;
 	}
+};
+
+#include <EOrder.h>
+using namespace plasma::client;
+
+struct ISource {
+	virtual uint32_t req_seq_no() = 0;
+	virtual uint8_t id() = 0;
+	virtual const ExecutionReport& execRpt() = 0;
+	virtual const OrderCancelReject& cxlRjt() = 0;
+};
+
+struct ITarget {
+	virtual uint32_t rpt_seq_no() = 0;
+	virtual EOrder* order() = 0;
+	virtual uint8_t id() = 0;
 };
