@@ -1,8 +1,8 @@
 #pragma once
 #include <plasma.h>
-#include "GUI.h"
-#include "MLS.h"
-#include "EPA.h"
+#include <GUI.h>
+#include <MLS.h>
+#include <EPA.h>
 #include <gtest/gtest.h>
 #include <stack>
 

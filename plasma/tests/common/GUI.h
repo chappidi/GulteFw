@@ -1,1 +1,48 @@
 #pragma once
+#include "ICallback.h"
+
+using namespace std;
+using namespace plasma::client;
+/////////////////////////////////////////////////////////////////////////
+//
+//
+class GUI final : public plasma::ICallback 
+{
+	static const uint8_t ID = 5;
+public:
+	uint8_t id() { return ID; }
+	void OnMsg(const NewOrderSingle& req) override {
+		// Never receives it
+	}
+	void OnMsg(const OrderCancelRequest& req) override {
+		// Never receives it
+	}
+	void OnMsg(const OrderReplaceRequest& req) override {
+		// Never receives it
+	}
+	void OnMsg(const OrderStatusRequest& req) override {
+		// Never receives it
+	}
+	void OnMsg(const ExecutionReport& rpt) override {
+		stringstream strm;
+		strm << "\tGUI:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] ";
+		stringstream  sts;
+		sts << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
+		stringstream  sQty;
+		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
+		//		std::cout << strm.str() << sQty.str() << std::endl;
+		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
+//		exe = rpt;
+	}
+	void OnMsg(const OrderCancelReject& rpt) override {
+		stringstream strm;
+		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
+		strm << OrdStatus::c_str(rpt.status());
+		std::cout << strm.str() << std::endl;
+//		rjt = rpt;
+	}
+	void OnMsg(const DontKnowTrade& rpt) override {
+		// Never receives it
+	}
+
+};
