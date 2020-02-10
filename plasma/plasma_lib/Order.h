@@ -2,6 +2,7 @@
 #include <plasma_client/NewOrderSingle.h>
 #include <plasma_client/OrderCancelRequest.h>
 #include <plasma_client/OrderReplaceRequest.h>
+#include <plasma_client/ExecutionReport.h>
 #include <cassert>
 using namespace std;
 using namespace plasma::client;

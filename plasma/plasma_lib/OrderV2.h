@@ -105,23 +105,3 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const OrderV2& sts)
 	rpt.lastPx(0);
 	return rpt;
 }
-static ExecutionReport& operator << (ExecutionReport& rpt, const NewOrderSingle& req)
-{
-	// set ids override as required
-	rpt.origClOrdId(0);
-	rpt.clOrdId(req.clOrdId());
-	// economics
-	rpt.symbol(req.symbol());
-	rpt.side(req.side());
-	rpt.qty(req.qty());
-	// default : override as required
-	rpt.execType(ExecType::Pending_New);
-	rpt.ordStatus(OrdStatus::Pending_New);
-	rpt.cumQty(0);
-	rpt.leavesQty(req.qty());
-	rpt.avgPx(0);
-	// fill details
-	rpt.lastQty(0);
-	rpt.lastPx(0);
-	return rpt;
-}

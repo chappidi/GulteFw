@@ -1,7 +1,7 @@
 #pragma once
 #include "ICallback.h"
 #include "messages.h"
-
+#include <Util.h>
 /////////////////////////////////////////////////////////////////////////
 //
 //
@@ -209,6 +209,17 @@ struct NewOrderReq : public OrderReq {
 		sts.ordStatus(OrdStatus::Rejected);
 		sts.leavesQty(0);
 		status();
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// Resend New order again
+	void resend() {
+
+		oms.OnMsg(nos);
+		auto exe = _src.execRpt();
+		assert(exe.execType() == ExecType::Rejected && exe.ordStatus() == sts.ordStatus());
+		assert(exe.origClOrdId() == 0 && exe.clOrdId() == nos.clOrdId() && exe.orderId() == order->_clOrdId);
+		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 };
 /////////////////////////////////////////////////////////////////////////

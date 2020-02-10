@@ -1,4 +1,5 @@
 #pragma once
+#include <plasma_client/NewOrderSingle.h>
 #include <plasma_client/OrderStatusRequest.h>
 #include <plasma_client/OrderCancelReject.h>
 #include <plasma_client/ExecutionReport.h>
@@ -15,7 +16,26 @@ struct Wrap : public T {
 		memcpy(data, o.buffer(), o.bufferLength());
 	}
 };
-
+static ExecutionReport& operator << (ExecutionReport& rpt, const NewOrderSingle& req)
+{
+	// set ids override as required
+	rpt.origClOrdId(0);
+	rpt.clOrdId(req.clOrdId());
+	// economics
+	rpt.symbol(req.symbol());
+	rpt.side(req.side());
+	rpt.qty(req.qty());
+	// default : override as required
+	rpt.execType(ExecType::Pending_New);
+	rpt.ordStatus(OrdStatus::Pending_New);
+	rpt.cumQty(0);
+	rpt.leavesQty(req.qty());
+	rpt.avgPx(0);
+	// fill details
+	rpt.lastQty(0);
+	rpt.lastPx(0);
+	return rpt;
+}
 static ExecutionReport& operator << (ExecutionReport& rpt, const OrderStatusRequest& osr)
 {
 	rpt.origClOrdId(0);
