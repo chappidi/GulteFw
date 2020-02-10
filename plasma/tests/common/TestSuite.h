@@ -5,6 +5,7 @@
 #include <plasma.h>
 #include <Thor.h>
 #include <gtest/gtest.h>
+#include <TestSuiteN.h>
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -20,7 +21,8 @@ struct TestSuite : public testing::Test
 		oms.OnLogin(epa); 
 	}
 	auto new_order(double qty) {
-		return 0;
+		return NewOrderReq(oms, gui, epa, qty);
+//		return std::make_shared<NewOrderReq>(oms, gui, epa, qty);
 	}
 };
 /////////////////////////////////////////////////////////////////////////
@@ -39,6 +41,7 @@ struct TestSuiteV2 : public testing::Test
 		oms.OnLogin(epa); 
 	}
 	auto new_order(ITarget& tgt, double qty) {
-		return 0;
+		return NewOrderReq(oms, gui, tgt, qty);
+//		return std::make_shared<NewOrderReq>(oms, gui, tgt, qty);
 	}
 };

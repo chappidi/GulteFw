@@ -1,11 +1,11 @@
 #include <TestSuite.h>
-#include "TestSuiteN.h"
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Child Order		(X)
 //  Child Order		(X)
 TEST_F(TestSuiteV2, nos_chld) {
-	NewOrderReq ptX(oms, gui, mls, 10000);
+	auto ptX = new_order(mls, 10000);
+//	NewOrderReq ptX(oms, gui, mls, 10000);
 	ptX.pending();
 	ptX.accept();
 

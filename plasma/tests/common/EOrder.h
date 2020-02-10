@@ -3,11 +3,15 @@
 #include <plasma_client/OrderCancelRequest.h>
 #include <plasma_client/OrderReplaceRequest.h>
 #include <plasma_client/OrderStatusRequest.h>
+#include <plasma_client/ExecutionReport.h>
 #include <plasma_client/OrderCancelReject.h>
 #include <set>
 using namespace std;
 using namespace plasma::client;
 
+/////////////////////////////////////////////////////////////////////////
+//
+//
 struct EOrder final
 {
 	uint32_t	_clOrdId;
@@ -21,6 +25,7 @@ struct EOrder final
 	OrdStatus::Value _status = OrdStatus::NA;
 	double_t	_cumQty{ 0 };
 	double_t	_avgPx{ 0 };
+	double_t	_leavesQty{ 0 };
 
 	// cancel and replace chaining
 	uint32_t	_head_rpl{ 0 };  // start of replace chain
@@ -30,7 +35,6 @@ struct EOrder final
 	uint32_t _prev{ 0 };
 //	set<uint32_t> _cxl_pending;
 //	set<uint32_t> _rpl_pending;
-	double_t leavesQty() const { return _qty - _cumQty; }
 
 	explicit EOrder(uint32_t oid, const NewOrderSingle& req)
 		: _ordId(oid) {
@@ -38,7 +42,7 @@ struct EOrder final
 		_clOrdId = req.clOrdId();
 		_symbol = req.symbol();
 		_side = req.side();
-		_qty = req.qty();
+		_leavesQty = _qty = req.qty();
 	}
 	// In a replace chain we need to carry forward origOrdId
 	explicit EOrder(uint32_t oid, const OrderCancelRequest& req, const EOrder& orig)
@@ -65,7 +69,8 @@ struct EOrder final
 	void fill(double lastQty, double lastPx) {
 		_avgPx = (_avgPx * _cumQty + lastQty * lastPx) / (_cumQty + lastQty);
 		_cumQty += lastQty;
-		_status = (leavesQty() == 0) ? OrdStatus::Filled : OrdStatus::Partially_Filled;
+		_leavesQty -= lastQty;
+		_status = (_qty > _cumQty) ? OrdStatus::Partially_Filled : OrdStatus::Filled;
 	}
 };
 static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) 
@@ -79,7 +84,7 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts)
 
 	rpt.ordStatus(sts._status);
 	rpt.cumQty(sts._cumQty);
-	rpt.leavesQty(sts.leavesQty());
+	rpt.leavesQty(sts._leavesQty);
 	rpt.avgPx(sts._avgPx);
 
 	rpt.lastQty(0);
