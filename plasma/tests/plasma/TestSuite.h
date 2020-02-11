@@ -11,6 +11,7 @@
 //
 struct TestSuite : public testing::Test
 {
+	const string reason = "";
 	plasma::OMS oms;
 	GUI gui;
 	EPA epa;

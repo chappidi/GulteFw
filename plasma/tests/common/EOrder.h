@@ -35,6 +35,7 @@ struct EOrder final
 	uint32_t _prev{ 0 };
 //	set<uint32_t> _cxl_pending;
 //	set<uint32_t> _rpl_pending;
+	double_t leavesQty() const { return _qty - _cumQty; }
 
 	explicit EOrder(uint32_t oid, const NewOrderSingle& req)
 		: _ordId(oid) {
@@ -66,12 +67,6 @@ struct EOrder final
 		_cumQty = orig._cumQty;
 		_avgPx = orig._avgPx;
 	}
-	void fill(double lastQty, double lastPx) {
-		_avgPx = (_avgPx * _cumQty + lastQty * lastPx) / (_cumQty + lastQty);
-		_cumQty += lastQty;
-		_leavesQty -= lastQty;
-		_status = (_qty > _cumQty) ? OrdStatus::Partially_Filled : OrdStatus::Filled;
-	}
 };
 static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts) 
 {
@@ -84,7 +79,7 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts)
 
 	rpt.ordStatus(sts._status);
 	rpt.cumQty(sts._cumQty);
-	rpt.leavesQty(sts._leavesQty);
+	rpt.leavesQty(sts.leavesQty());
 	rpt.avgPx(sts._avgPx);
 
 	rpt.lastQty(0);

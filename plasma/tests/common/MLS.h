@@ -2,7 +2,7 @@
 #include "ICallback.h"
 #include "messages.h"
 #include <sstream>
-#include <map>
+#include "Sink.h"
 
 using namespace std;
 using namespace plasma::client;
@@ -19,15 +19,14 @@ class MLS final : public ISource, public ITarget, public plasma::ICallback
 	PROXY<OrderCancelReject> rjt;
 	int			ClOrdId = 0;
 	uint32_t	ord_id = 2001;
-	map<uint32_t, EOrder*> _clt2Ord;
-	map<uint32_t, EOrder*> _oid2Ord;
+	Sink		_snk;
 public:
 	const ExecutionReport&		execRpt()	{ return exe; }
 	const OrderCancelReject&	cxlRjt()	{ return rjt; }
 	uint32_t				req_seq_no()	{ return req_id++; }
-	uint32_t				rpt_seq_no()	{ return rpt_id++; }
-	EOrder*						order()		{ return _clt2Ord[ClOrdId]; };
+	uint32_t					clOrdId()	{ return ClOrdId; }
 	uint8_t						id()		{ return ID; }
+	Sink&						sink()		{ return _snk; }
 
 	void OnMsg(const NewOrderSingle& req) override {
 		stringstream strm;
@@ -35,8 +34,8 @@ public:
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
-		_clt2Ord[req.clOrdId()] = new EOrder(oid, req);
-		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
+		_snk._clt2Ord[req.clOrdId()] = new EOrder(oid, req);
+		_snk._oid2Ord[oid] = _snk._clt2Ord[req.clOrdId()];
 		ClOrdId = req.clOrdId();
 	}
 	void OnMsg(const OrderCancelRequest& req) override {
@@ -45,8 +44,8 @@ public:
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
-		_clt2Ord[req.clOrdId()] = new EOrder(oid, req, *_clt2Ord[req.origClOrdId()]);
-		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
+		_snk._clt2Ord[req.clOrdId()] = new EOrder(oid, req, *_snk._clt2Ord[req.origClOrdId()]);
+		_snk._oid2Ord[oid] = _snk._clt2Ord[req.clOrdId()];
 		ClOrdId = req.clOrdId();
 	}
 	void OnMsg(const OrderReplaceRequest& req) override {
@@ -55,8 +54,8 @@ public:
 		std::cout << strm.str() << std::endl;
 
 		auto oid = ord_id++;
-		_clt2Ord[req.clOrdId()] = new EOrder(oid, req, *_clt2Ord[req.origClOrdId()]);
-		_oid2Ord[oid] = _clt2Ord[req.clOrdId()];
+		_snk._clt2Ord[req.clOrdId()] = new EOrder(oid, req, *_snk._clt2Ord[req.origClOrdId()]);
+		_snk._oid2Ord[oid] = _snk._clt2Ord[req.clOrdId()];
 		ClOrdId = req.clOrdId();
 	}
 	void OnMsg(const OrderStatusRequest& req) override {

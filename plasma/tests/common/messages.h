@@ -29,8 +29,9 @@ struct PROXY : public T {
 	}
 };
 
-#include <EOrder.h>
 using namespace plasma::client;
+struct EOrder;
+struct Sink;
 
 struct ISource {
 	virtual uint32_t req_seq_no() = 0;
@@ -40,7 +41,7 @@ struct ISource {
 };
 
 struct ITarget {
-	virtual uint32_t rpt_seq_no() = 0;
-	virtual EOrder* order() = 0;
+	virtual uint32_t clOrdId() = 0;
+	virtual Sink& sink() = 0;
 	virtual uint8_t id() = 0;
 };
