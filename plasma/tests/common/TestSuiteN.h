@@ -36,7 +36,7 @@ struct IRequest {
 //
 struct CancelReq : public IRequest {
 	IRequest& chain;
-	PROXY<OrderCancelRequest> ocr;
+	const PROXY<OrderCancelRequest> ocr;
 	auto get_cxl(const OrderStatusRequest& osr)
 	{
 		PROXY<OrderCancelRequest> req;
@@ -109,7 +109,6 @@ struct CancelReq : public IRequest {
 		//query and check
 		orig.ordStatus(OrdStatus::Value::Canceled);
 		sts.ordStatus(OrdStatus::Value::Canceled);
-		sts.origClOrdId(orig.clOrdId());
 		sts.orderId(orig.orderId());
 		status();
 	}
@@ -124,6 +123,8 @@ struct CancelReq : public IRequest {
 
 		//query and check
 		sts.ordStatus(OrdStatus::Value::Rejected);
+		sts.origClOrdId(0);
+		sts.orderId(idX);
 		status();
 	}
 	void status() const {
@@ -131,6 +132,8 @@ struct CancelReq : public IRequest {
 		IRequest::status();
 	}
 };
+struct ReplaceReq;
+struct NewOrderReq;
 /////////////////////////////////////////////////////////////////////////
 // Need Target to generate exec_rpt id
 //
@@ -142,12 +145,9 @@ struct OrderReq : public IRequest
 	auto cancel_order() {
 		return CancelReq(*this);
 	}
-	auto replace_order(double qty) {
-		return 0;
-	}
-	auto slice(ITarget& tgt, double qty) {
-		return 0; // ChildOrderReq(*this, tgt, qty);
-	}
+	ReplaceReq replace_order(double qty);
+	NewOrderReq slice_order(ITarget& tgt, double qty);
+
 	void fill(double qty, double px = 99.98) {
 		//update status
 		sts.cumQty(sts.cumQty() + qty);
@@ -203,11 +203,13 @@ struct OrderReq : public IRequest
 //
 struct NewOrderReq : public OrderReq 
 {
+	OrderReq* _prnt{ nullptr };
 	// store for resend
 	const PROXY<NewOrderSingle> nos;
 	// utility to create NewOrderSingle
-	auto get_nos(ITarget& tgt, double_t qty) {
+	auto get_nos(ITarget& tgt, double_t qty, OrderReq* prnt) {
 		PROXY<NewOrderSingle> req;
+		req.parent(prnt != nullptr ? prnt->idX : 0);
 		req.clOrdId(_src.req_seq_no());
 		req.target(tgt.id());
 		req.symbol(9999);
@@ -233,8 +235,8 @@ struct NewOrderReq : public OrderReq
 		return req;
 	}
 	// constructor
-	NewOrderReq(plasma::ICallback& pls, ISource& src, ITarget& tgt, double qty, uint32_t prntid = 0)
-		: OrderReq(pls, src, tgt), nos(get_nos(_tgt, qty))
+	NewOrderReq(plasma::ICallback& pls, ISource& src, ITarget& tgt, double qty, OrderReq* prnt = nullptr)
+		: OrderReq(pls, src, tgt), _prnt(prnt), nos(get_nos(_tgt, qty, prnt))
 	{
 		//publish nos
 		oms.OnMsg(nos);
@@ -309,15 +311,20 @@ struct NewOrderReq : public OrderReq
 		//query and check
 		status();
 	}
+	void status() const {
+		OrderReq::status();
+		if (_prnt != nullptr)
+			_prnt->status();
+	}
 };
 /////////////////////////////////////////////////////////////////////////
-//
+// ToBe DELETED
 //
 struct ChildOrderReq : public NewOrderReq {
-	const NewOrderReq& _prnt;
-	ChildOrderReq(const NewOrderReq& prnt, ITarget& tgt, double qty)
-		:NewOrderReq(prnt.oms, dynamic_cast<ISource&>(prnt._tgt), tgt, qty, prnt.idX),
-		_prnt(prnt) {
+	const OrderReq& _prnt;
+	ChildOrderReq(OrderReq& prnt, ITarget& tgt, double qty)
+		: NewOrderReq(prnt.oms, dynamic_cast<ISource&>(prnt._tgt), tgt, qty, &prnt)
+		, _prnt(prnt) {
 		// blank
 	}
 	void status() const {
@@ -329,7 +336,24 @@ struct ChildOrderReq : public NewOrderReq {
 //
 //
 struct ReplaceReq : public OrderReq {
+	IRequest& chain;
 	PROXY<OrderReplaceRequest> orr;
+	PROXY<OrderReplaceRequest> get_rpl(const OrderStatusRequest& osr, double_t qty) {
+		PROXY<OrderReplaceRequest> req;
+		req.clOrdId(_src.req_seq_no());
+		req.origClOrdId(osr.clOrdId());
+		req.symbol(osr.symbol());
+		req.side(osr.side());
+		req.qty(qty);
+
+		// fill in status
+		sts.origClOrdId(0).clOrdId(req.clOrdId())
+			.symbol(req.symbol()).side(req.side()).qty(req.qty())
+			.ordStatus(OrdStatus::NA)
+			.cumQty(0).leavesQty(req.qty())
+			.avgPx(0).lastQty(0).lastPx(0);		
+		return req;
+	}
 	PROXY<OrderStatusRequest> get_osr() const
 	{
 		PROXY<OrderStatusRequest> req;
@@ -340,27 +364,71 @@ struct ReplaceReq : public OrderReq {
 		req.orderId(idX);
 		return req;
 	}
-	ReplaceReq(const OrderReq& or, double qty) : OrderReq(or.oms, or._src, or._tgt) {
+	ReplaceReq(OrderReq& or, double qty) 
+		: OrderReq(or.oms, or._src, or._tgt), chain(or), orr(get_rpl(or.get_osr(), qty)) {
+		// publish orr
+		oms.OnMsg(orr);
+		idX = _tgt.clOrdId();
+		std::cout << "[" << ClientId(orr.clOrdId()) << "-->" << idX << "]" << std::endl;
+
+		//query and check
+		sts.orderId(idX);
+		status();
 	}
 	void pending() 
 	{
+		auto& orig = chain.sts;
 		//send response & check client report
-		oms.OnMsg(_tgt.sink().get_pnd_rpl(idX, -1));
+		oms.OnMsg(_tgt.sink().get_pnd_rpl(idX, orig.orderId()));
 		auto exe = _src.execRpt();
+		assert(exe.execType() == ExecType::Pending_Replace && exe.ordStatus() == OrdStatus::Pending_Replace);
+		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.orderId());
+		assert(exe.leavesQty() == orig.leavesQty() && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
+
+		//query and check
+		orig.ordStatus(OrdStatus::Value::Pending_Replace);
+		sts.ordStatus(OrdStatus::Value::Pending_Replace);
+		sts.origClOrdId(orig.clOrdId());
+		sts.orderId(orig.orderId());
+		status();
 	}
 	void accept() 
 	{
+		auto& orig = chain.sts;
 		//send response & check client report
-		oms.OnMsg(_tgt.sink().get_rpld(idX, -1));
+		oms.OnMsg(_tgt.sink().get_rpld(idX, orig.orderId()));
 		auto exe = _src.execRpt();
+		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.ordStatus());
+		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.orderId());
+		assert(exe.leavesQty() == (orr.qty() - orig.cumQty()) && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
+
+		//query and check
+		status();
 	}
 	void reject() { reject(""); }
 	void reject(const std::string& reason) {
+		auto& orig = chain.sts;
 		//send response & check client report
-		oms.OnMsg(_tgt.sink().get_rjt(idX, -1, reason));
+		oms.OnMsg(_tgt.sink().get_rjt(idX, orig.orderId(), reason));
 		auto rjt = _src.cxlRjt();
+		assert(rjt.status() == orig.ordStatus());
+		assert(rjt.origClOrdId() == orig.clOrdId() && rjt.clOrdId() == sts.clOrdId() && rjt.orderId() == orig.orderId());
+
+		//query and check
+		sts.ordStatus(OrdStatus::Value::Rejected);
+		status();
+	}
+	void status() const {
+		chain.status();
+		IRequest::status();
 	}
 };
 
+inline ReplaceReq OrderReq::replace_order(double qty) {
+	return ReplaceReq(*this, qty);
+}
+inline NewOrderReq OrderReq::slice_order(ITarget& tgt, double qty) {
+	return NewOrderReq(oms, dynamic_cast<ISource&>(_tgt), tgt, qty, this);
+}

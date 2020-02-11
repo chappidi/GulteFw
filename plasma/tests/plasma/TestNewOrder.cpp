@@ -13,6 +13,7 @@ TEST_F(TestSuite, SIZE) {
 TEST_F(TestSuite, nos_rjt) {
 	auto idX = new_order(10000);
 	idX.reject();
+	idX.status();
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
