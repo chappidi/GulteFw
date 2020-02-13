@@ -1,8 +1,8 @@
 ﻿
 add_executable( plasma_unit_test
 	TestNewOrder.cpp
-	TestReplaceOrder.cpp
 	TestCancelOrder.cpp
+	TestReplaceOrder.cpp
 	)
 target_link_libraries(plasma_unit_test gtest_main plasmalib test_common)
 

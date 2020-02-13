@@ -7,6 +7,7 @@
 using namespace plasma::client;
 /////////////////////////////////////////////////////////////////////////
 // translate functions
+/*
 static OrderStatusRequest& operator << (OrderStatusRequest& osr, const NewOrderSingle& req)
 {
 	osr.clOrdId(req.clOrdId())
@@ -15,6 +16,7 @@ static OrderStatusRequest& operator << (OrderStatusRequest& osr, const NewOrderS
 		.qty(req.qty());
 	return osr;
 }
+*/
 static OrderStatusRequest& operator << (OrderStatusRequest& osr, const OrderReplaceRequest& req)
 {
 	osr.clOrdId(req.clOrdId())
@@ -23,6 +25,7 @@ static OrderStatusRequest& operator << (OrderStatusRequest& osr, const OrderRepl
 		.qty(req.qty());
 	return osr;
 }
+/*
 static OrderStatusRequest& operator << (OrderStatusRequest& osr, const OrderCancelRequest& req)
 {
 	osr.clOrdId(req.clOrdId())
@@ -31,3 +34,4 @@ static OrderStatusRequest& operator << (OrderStatusRequest& osr, const OrderCanc
 		.qty(req.qty());
 	return osr;
 }
+*/
