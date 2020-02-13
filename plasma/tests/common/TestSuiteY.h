@@ -49,6 +49,7 @@ class NewOrderReq;
 //
 struct OrderReq : public IRequest
 {
+	map<uint32_t, OrdStatus::Value> osv;
 public:
 	OrderReq(plasma::ICallback& pls, ISource& sr, ITarget& tg)
 		: IRequest(pls, sr, tg) {
@@ -69,11 +70,13 @@ public:
 		sts.leavesQty(sts.leavesQty() - qty);
 		sts.avgPx(99.98);
 		auto ordS = (sts.leavesQty() == 0) ? OrdStatus::Filled : OrdStatus::Partially_Filled;
-		// TODO: Need to check if any pending replace or cancel exists
 		sts.ordStatus(ordS);
+		// if there are any cxl/rpl requests pending, then its status is reported
+		for (const auto& [k, v] : osv) 
+			ordS = v;
 
 		auto exe = src.execRpt(sts.clOrdId());
-		assert(exe.execType() == ExecType::Trade && exe.ordStatus() == sts.ordStatus());
+		assert(exe.execType() == ExecType::Trade && exe.ordStatus() == ordS);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
 		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
 		assert(exe.lastQty() == qty && exe.lastPx() == px);
@@ -238,7 +241,7 @@ public:
 //
 class CancelReq : public IRequest {
 	// orig order which needs to be canceled
-	const PROXY<ExecutionReport>& orig;
+	OrderReq& orig;
 	// immutable cancel request. used for resend
 	const PROXY<OrderCancelRequest> ocr;
 	/////////////////////////////////////////////////////////////////////////
@@ -267,7 +270,7 @@ class CancelReq : public IRequest {
 	/////////////////////////////////////////////////////////////////////////
 	// constructor (orig request which needs to be canceled)
 	CancelReq(OrderReq& org)
-		: IRequest(org.oms, org.src, org.tgt), orig(org.sts), ocr(create(org.sts))
+		: IRequest(org.oms, org.src, org.tgt), orig(org), ocr(create(org.sts))
 	{
 		send_request();
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
@@ -277,40 +280,57 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Pending_Cancel
 	void pending() {
-		oms.OnMsg(tgt.sink().get_pnd_cxl(osr.orderId(), orig.orderId()));
+		oms.OnMsg(tgt.sink().get_pnd_cxl(osr.orderId(), orig.sts.orderId()));
+		// add to the orig awaiting pending_cancel
+		orig.osv[osr.orderId()] = OrdStatus::Pending_Cancel;
 		check_pending();
 	}
 	void check_pending() {
+		sts.ordStatus(OrdStatus::Pending_Cancel);
+
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_Cancel && exe.ordStatus() == OrdStatus::Pending_Cancel);
-		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.orderId());
-		assert(exe.leavesQty() == orig.leavesQty() && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
+		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.sts.orderId());
+		assert(exe.leavesQty() == orig.sts.leavesQty() && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Canceled
 	void accept() {
-		oms.OnMsg(tgt.sink().get_cxld(osr.orderId(), orig.orderId()));
+		// erase this request from pending
+		orig.osv.erase(osr.orderId());
+		oms.OnMsg(tgt.sink().get_cxld(osr.orderId(), orig.sts.orderId()));
 		check_accept();
 	}
 	void check_accept() {
+		sts.ordStatus(OrdStatus::Canceled);
+		orig.sts.ordStatus(OrdStatus::Canceled);
+
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Canceled && exe.ordStatus() == OrdStatus::Canceled);
-		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.orderId());
-		assert(exe.leavesQty() == 0 && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
+		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.sts.orderId());
+		assert(exe.leavesQty() == 0 && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Rejected
 	void reject() { reject(""); }
 	void reject(const std::string& reason) {
-		oms.OnMsg(tgt.sink().get_rjt(osr.orderId(), orig.orderId(), reason));
+		// erase this request from pending
+		orig.osv.erase(osr.orderId());
+		oms.OnMsg(tgt.sink().get_rjt(osr.orderId(), orig.sts.orderId(), reason));
 		check_reject();
 	}
 	void check_reject() {
+		sts.ordStatus(OrdStatus::Rejected);
+		auto ordS = orig.sts.ordStatus();
+		// if there are any cxl/rpl requests pending, then its status is reported
+		for (const auto& [k, v] : orig.osv) 
+			ordS = v;
+
 		auto rjt = src.cxlRjt();
-		assert(rjt.status() == orig.ordStatus());
-		assert(rjt.origClOrdId() == orig.clOrdId() && rjt.clOrdId() == sts.clOrdId() && rjt.orderId() == orig.orderId());
+		assert(rjt.status() == ordS);
+		assert(rjt.origClOrdId() == orig.sts.clOrdId() && rjt.clOrdId() == sts.clOrdId() && rjt.orderId() == orig.sts.orderId());
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// Resend cancel request again

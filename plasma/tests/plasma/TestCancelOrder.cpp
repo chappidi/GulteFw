@@ -123,8 +123,9 @@ TEST_F(TestSuite, nos_ack_fill_cxl_fill_pnd_fill_rjt) {
 	auto idY = idX.cancel_order();
 	idX.fill(3000);
 	idY.pending();
-	idX.fill(5000);
+	idX.fill(2000);
 	idY.reject(reason);
+	idX.fill(3000);
 }
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
