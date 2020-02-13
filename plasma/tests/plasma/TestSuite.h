@@ -4,7 +4,7 @@
 #include <EPA.h>
 #include <plasma.h>
 #include <gtest/gtest.h>
-#include <TestSuiteN.h>
+#include <TestSuiteY.h>
 
 /////////////////////////////////////////////////////////////////////////
 //
@@ -22,6 +22,5 @@ struct TestSuite : public testing::Test
 	}
 	auto new_order(double qty) {
 		return NewOrderReq(oms, gui, epa, qty);
-//		return std::make_shared<NewOrderReq>(oms, gui, epa, qty);
 	}
 };

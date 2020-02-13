@@ -2,6 +2,7 @@
 #include "ICallback.h"
 #include "messages.h"
 #include <sstream>
+#include <map>
 
 using namespace std;
 using namespace plasma::client;
@@ -12,12 +13,14 @@ class GUI final : public ISource, public plasma::ICallback
 {
 	static const uint8_t ID = 5;
 	uint32_t req_id = (ID << 24) + 7001;
-	PROXY<ExecutionReport>	exe;
+	map<uint32_t, PROXY<ExecutionReport>> execs;
 	PROXY<OrderCancelReject> rjt;
 public:
 	uint32_t req_seq_no()	{ return req_id++; }
 	uint8_t  id()			{ return ID; }
-	const ExecutionReport& execRpt() { return exe; }
+	const ExecutionReport& execRpt(uint32_t clOrdId) { 
+		return execs[clOrdId]; 
+	}
 	const OrderCancelReject& cxlRjt() { return rjt; }
 
 	void OnMsg(const NewOrderSingle& req) override {
@@ -41,7 +44,7 @@ public:
 		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
 		//		std::cout << strm.str() << sQty.str() << std::endl;
 		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
-		exe = rpt;
+		execs[rpt.clOrdId()] = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;

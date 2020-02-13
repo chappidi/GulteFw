@@ -24,7 +24,7 @@ struct IRequest {
 		// publish order status request
 		oms.OnMsg(get_osr());
 		// wait & compare to expected value (sts)
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == sts.ordStatus());
 		assert(exe.origClOrdId() == sts.origClOrdId() && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
 		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
@@ -83,7 +83,7 @@ struct CancelReq : public IRequest {
 		auto& orig = chain.sts;
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_pnd_cxl(idX, orig.orderId()));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_Cancel && exe.ordStatus() == OrdStatus::Pending_Cancel);
 		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.orderId());
 		assert(exe.leavesQty() == orig.leavesQty() && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
@@ -100,7 +100,7 @@ struct CancelReq : public IRequest {
 		auto& orig = chain.sts;
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_cxld(idX, orig.orderId()));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Canceled && exe.ordStatus() == OrdStatus::Canceled);
 		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.orderId());
 		assert(exe.leavesQty() == 0 && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
@@ -158,7 +158,7 @@ struct OrderReq : public IRequest
 
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_fill(idX, qty, 99.98));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Trade && exe.ordStatus() == sts.ordStatus());
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
@@ -171,7 +171,7 @@ struct OrderReq : public IRequest
 	{
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_done(idX));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Done_For_Day && exe.ordStatus() == OrdStatus::Done_For_Day);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
@@ -186,7 +186,7 @@ struct OrderReq : public IRequest
 	{
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_cxld(idX));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Canceled && exe.ordStatus() == OrdStatus::Canceled);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
@@ -253,7 +253,7 @@ struct NewOrderReq : public OrderReq
 	{
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_pnd_new(idX));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_New && exe.ordStatus() == OrdStatus::Pending_New);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == nos.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == nos.qty() && exe.cumQty() == 0 && exe.avgPx() == 0);
@@ -269,7 +269,7 @@ struct NewOrderReq : public OrderReq
 	{
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_new(idX));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::New && exe.ordStatus() == OrdStatus::New);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == nos.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == nos.qty() && exe.cumQty() == 0 && exe.avgPx() == 0);
@@ -285,7 +285,7 @@ struct NewOrderReq : public OrderReq
 	{
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_rjt(idX));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Rejected && exe.ordStatus() == OrdStatus::Rejected);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == nos.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == 0 && exe.cumQty() == 0 && exe.avgPx() == 0);
@@ -302,7 +302,7 @@ struct NewOrderReq : public OrderReq
 	{
 		//send request & check client report
 		oms.OnMsg(nos);
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Rejected && exe.ordStatus() == sts.ordStatus());
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == nos.clOrdId() && exe.orderId() == idX);
 		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
@@ -380,7 +380,7 @@ struct ReplaceReq : public OrderReq {
 		auto& orig = chain.sts;
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_pnd_rpl(idX, orig.orderId()));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_Replace && exe.ordStatus() == OrdStatus::Pending_Replace);
 		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.orderId());
 		assert(exe.leavesQty() == orig.leavesQty() && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
@@ -398,7 +398,7 @@ struct ReplaceReq : public OrderReq {
 		auto& orig = chain.sts;
 		//send response & check client report
 		oms.OnMsg(_tgt.sink().get_rpld(idX, orig.orderId()));
-		auto exe = _src.execRpt();
+		auto exe = _src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.ordStatus());
 		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.orderId());
 		assert(exe.leavesQty() == (orr.qty() - orig.cumQty()) && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());

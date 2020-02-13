@@ -36,7 +36,7 @@ struct Sink;
 struct ISource {
 	virtual uint32_t req_seq_no() = 0;
 	virtual uint8_t id() = 0;
-	virtual const ExecutionReport& execRpt() = 0;
+	virtual const ExecutionReport& execRpt(uint32_t clOrdId) = 0;
 	virtual const OrderCancelReject& cxlRjt() = 0;
 };
 

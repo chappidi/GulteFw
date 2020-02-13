@@ -21,7 +21,7 @@ class MLS final : public ISource, public ITarget, public plasma::ICallback
 	uint32_t	ord_id = 2001;
 	Sink		_snk;
 public:
-	const ExecutionReport&		execRpt()	{ return exe; }
+	const ExecutionReport&		execRpt(uint32_t clOrdId)	{ return exe; }
 	const OrderCancelReject&	cxlRjt()	{ return rjt; }
 	uint32_t				req_seq_no()	{ return req_id++; }
 	uint32_t					clOrdId()	{ return ClOrdId; }

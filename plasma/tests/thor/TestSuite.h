@@ -23,6 +23,5 @@ struct TestSuiteV2 : public testing::Test
 	}
 	auto new_order(ITarget& tgt, double qty) {
 		return NewOrderReq(oms, gui, tgt, qty);
-//		return std::make_shared<NewOrderReq>(oms, gui, tgt, qty);
 	}
 };
