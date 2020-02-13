@@ -2,6 +2,7 @@
 #include "ICallback.h"
 #include "messages.h"
 #include <sstream>
+#include <map>
 #include "Sink.h"
 
 using namespace std;
@@ -15,13 +16,15 @@ class MLS final : public ISource, public ITarget, public plasma::ICallback
 	static const uint8_t ID = 7;
 	uint32_t rpt_id = (ID << 24) + 9001;
 	uint32_t req_id = (ID << 24) + 3001;
-	PROXY<ExecutionReport>	exe;
+	map<uint32_t, PROXY<ExecutionReport>> execs;
 	PROXY<OrderCancelReject> rjt;
 	int			ClOrdId = 0;
 	uint32_t	ord_id = 2001;
 	Sink		_snk;
 public:
-	const ExecutionReport&		execRpt(uint32_t clOrdId)	{ return exe; }
+	const ExecutionReport&		execRpt(uint32_t clOrdId)	{ 
+		return execs[clOrdId];
+	}
 	const OrderCancelReject&	cxlRjt()	{ return rjt; }
 	uint32_t				req_seq_no()	{ return req_id++; }
 	uint32_t					clOrdId()	{ return ClOrdId; }
@@ -70,7 +73,7 @@ public:
 		stringstream  sQty;
 		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
 		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
-		exe = rpt;
+		execs[rpt.clOrdId()] = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;

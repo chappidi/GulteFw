@@ -408,10 +408,14 @@ public:
 		check_accept();
 	}
 	void check_accept() {
+		sts.leavesQty(sts.qty() - orig.sts.cumQty());
+		sts.cumQty(orig.sts.cumQty());
+		sts.avgPx(orig.sts.avgPx());
+
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.sts.ordStatus());
 		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == (orr.qty() - orig.sts.cumQty()) && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
+		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
