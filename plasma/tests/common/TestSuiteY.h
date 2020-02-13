@@ -1,8 +1,6 @@
 #pragma once
 #include "ICallback.h"
 #include "messages.h"
-#include <Util.h>
-#include <UtilX.h>
 
 /////////////////////////////////////////////////////////////////////////
 // interface to define the functionality
@@ -39,22 +37,26 @@ struct IRequest {
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 };
+
 /////////////////////////////////////////////////////////////////////////
 // forward declarations
 class CancelReq;
 class ReplaceReq;
 class NewOrderReq;
+
 /////////////////////////////////////////////////////////////////////////
 // common functionality of NewOrder  & Replace Order
-struct OrderReq : public IRequest 
+//
+struct OrderReq : public IRequest
 {
+public:
 	OrderReq(plasma::ICallback& pls, ISource& sr, ITarget& tg)
 		: IRequest(pls, sr, tg) {
 	}
 	CancelReq	cancel_order();
 	ReplaceReq	replace_order(double qty);
 	NewOrderReq slice_order(ITarget& tgt, double qty);
-
+#pragma region actions
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Fill or Partial_Fill or Pending_Replace or Pending_Cancel
 	void fill(double qty, double px = 99.98) {
@@ -108,7 +110,9 @@ struct OrderReq : public IRequest
 		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
+#pragma endregion
 };
+
 /////////////////////////////////////////////////////////////////////////
 //
 //
@@ -162,6 +166,7 @@ public:
 	{
 		send_request();
 	}
+#pragma region actions
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Pending_New
 	void pending() {
@@ -224,10 +229,10 @@ public:
 		if (_prnt != nullptr)
 			_prnt->check_fill(qty, px);
 	}
-	////////////////////////////////////////////////////////////////////////////////////////////
-	// friends
+#pragma endregion
 	friend struct OrderReq;
 };
+
 /////////////////////////////////////////////////////////////////////////
 //
 //
@@ -241,12 +246,8 @@ class CancelReq : public IRequest {
 	auto create(const ExecutionReport& orig) {
 		PROXY<OrderCancelRequest> req;
 		// fill in the details
-		req.clOrdId(src.req_seq_no())
-			.origClOrdId(orig.clOrdId())
-			.symbol(orig.symbol())
-			.side(orig.side())
-			.qty(orig.qty())
-			.orderId(orig.orderId());
+		req.clOrdId(src.req_seq_no()).origClOrdId(orig.clOrdId()).orderId(orig.orderId())
+			.symbol(orig.symbol()).side(orig.side()).qty(orig.qty());
 		return req;
 	}
 	/////////////////////////////////////////////////////////////////////////
@@ -272,6 +273,7 @@ class CancelReq : public IRequest {
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
 	}
 public:
+#pragma region actions
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Pending_Cancel
 	void pending() {
@@ -316,55 +318,98 @@ public:
 		oms.OnMsg(ocr);
 		check_resend();
 	}
+#pragma endregion
 	friend struct OrderReq;
 };
+
 /////////////////////////////////////////////////////////////////////////
 //
 //
 class ReplaceReq : public OrderReq {
 	// orig order which needs to be replaced
-	const PROXY<OrderStatusRequest>& orig;
+	const PROXY<ExecutionReport>& orig;
 	// immutable replace request. used for resend
 	const PROXY<OrderReplaceRequest> orr;
 	/////////////////////////////////////////////////////////////////////////
 	// utility function
-	PROXY<OrderReplaceRequest> create(const OrderStatusRequest& orig, double_t qty) {
+	PROXY<OrderReplaceRequest> create(const ExecutionReport& orig, double_t qty) {
 		PROXY<OrderReplaceRequest> req;
 		// fill in the details
-		req.clOrdId(src.req_seq_no())
-			.origClOrdId(orig.clOrdId())
-			.symbol(orig.symbol())
-			.side(orig.side())
-			.qty(qty);
+		req.clOrdId(src.req_seq_no()).origClOrdId(orig.clOrdId()).orderId(orig.orderId())
+			.symbol(orig.symbol()).side(orig.side()).qty(qty);
 		return req;
+	}
+	/////////////////////////////////////////////////////////////////////////
+	// publish request and fill in osr and expected sts 
+	void send_request() {
+		// publish
+		oms.OnMsg(orr);
+		// fill in osr
+		osr.clOrdId(orr.clOrdId()).orderId(tgt.clOrdId())
+			.symbol(orr.symbol()).side(orr.side()).qty(orr.qty());
+		// fill in sts
+		sts.origClOrdId(orr.origClOrdId()).clOrdId(orr.clOrdId()).orderId(tgt.clOrdId())
+			.symbol(orr.symbol()).side(orr.side()).qty(orr.qty())
+			.ordStatus(OrdStatus::NA).cumQty(0).leavesQty(orr.qty())
+			.avgPx(0).lastQty(0).lastPx(0);
 	}
 	/////////////////////////////////////////////////////////////////////////
 	// constructor ( orig request which needs to be replaced and new qty)
 	ReplaceReq(OrderReq& org, double qty)
-		: OrderReq(org.oms, org.src, org.tgt), orig(org.osr), orr(create(org.osr, qty)) {
-		osr << orr;
-		// publish
-		oms.OnMsg(orr);
-		// store the plasma id
-		osr.orderId(tgt.clOrdId());
+		: OrderReq(org.oms, org.src, org.tgt), orig(org.sts), orr(create(org.sts, qty)) {
+		send_request();
 		std::cout << "[" << ClientId(orr.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
 	}
 public:
+#pragma region actions
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// order = OrdStatus::Pending_Replace
 	void pending() {
 		oms.OnMsg(tgt.sink().get_pnd_rpl(osr.orderId(), orig.orderId()));
+		check_pending();
 	}
+	void check_pending() {
+		auto exe = src.execRpt(sts.clOrdId());
+		assert(exe.execType() == ExecType::Pending_Replace && exe.ordStatus() == OrdStatus::Pending_Replace);
+		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.orderId());
+		assert(exe.leavesQty() == orig.leavesQty() && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
+		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// order = replaced. new order now
 	void accept() {
 		oms.OnMsg(tgt.sink().get_rpld(osr.orderId(), orig.orderId()));
+		check_accept();
 	}
+	void check_accept() {
+		auto exe = src.execRpt(sts.clOrdId());
+		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.ordStatus());
+		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == sts.orderId());
+		assert(exe.leavesQty() == (orr.qty() - orig.cumQty()) && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
+		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// order = OrdStatus::Rejected
 	void reject() { reject(""); }
 	void reject(const std::string& reason) {
 		oms.OnMsg(tgt.sink().get_rjt(osr.orderId(), orig.orderId(), reason));
+		check_reject();
 	}
+	void check_reject() {
+		auto rjt = src.cxlRjt();
+		assert(rjt.status() == orig.ordStatus());
+		assert(rjt.origClOrdId() == orig.clOrdId() && rjt.clOrdId() == sts.clOrdId() && rjt.orderId() == orig.orderId());
+	}
+	////////////////////////////////////////////////////////////////////////////////////////////
+	// Resend replace request again
 	void resend() {
 		oms.OnMsg(orr);
+		check_resend();
 	}
+#pragma endregion
 	friend struct OrderReq;
 };
+
 /////////////////////////////////////////////////////////////////////////
 //
 inline CancelReq OrderReq::cancel_order() {
