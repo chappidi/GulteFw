@@ -347,7 +347,7 @@ public:
 //
 class ReplaceReq : public OrderReq {
 	// orig order which needs to be replaced
-	const PROXY<ExecutionReport>& orig;
+	OrderReq& orig;
 	// immutable replace request. used for resend
 	const PROXY<OrderReplaceRequest> orr;
 	/////////////////////////////////////////////////////////////////////////
@@ -376,7 +376,7 @@ class ReplaceReq : public OrderReq {
 	/////////////////////////////////////////////////////////////////////////
 	// constructor ( orig request which needs to be replaced and new qty)
 	ReplaceReq(OrderReq& org, double qty)
-		: OrderReq(org.oms, org.src, org.tgt), orig(org.sts), orr(create(org.sts, qty)) {
+		: OrderReq(org.oms, org.src, org.tgt), orig(org), orr(create(org.sts, qty)) {
 		send_request();
 		std::cout << "[" << ClientId(orr.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
 	}
@@ -385,40 +385,54 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Pending_Replace
 	void pending() {
-		oms.OnMsg(tgt.sink().get_pnd_rpl(osr.orderId(), orig.orderId()));
+		oms.OnMsg(tgt.sink().get_pnd_rpl(osr.orderId(), orig.sts.orderId()));
+		// add to the orig awaiting Pending_Replace
+		orig.osv[osr.orderId()] = OrdStatus::Pending_Replace;
 		check_pending();
 	}
 	void check_pending() {
+		sts.ordStatus(OrdStatus::Pending_Replace);
+
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_Replace && exe.ordStatus() == OrdStatus::Pending_Replace);
-		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.orderId());
-		assert(exe.leavesQty() == orig.leavesQty() && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
+		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.sts.orderId());
+		assert(exe.leavesQty() == orig.sts.leavesQty() && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = replaced. new order now
 	void accept() {
-		oms.OnMsg(tgt.sink().get_rpld(osr.orderId(), orig.orderId()));
+		// erase this request from pending
+		orig.osv.erase(osr.orderId());
+		oms.OnMsg(tgt.sink().get_rpld(osr.orderId(), orig.sts.orderId()));
 		check_accept();
 	}
 	void check_accept() {
 		auto exe = src.execRpt(sts.clOrdId());
-		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.ordStatus());
-		assert(exe.origClOrdId() == orig.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == (orr.qty() - orig.cumQty()) && exe.cumQty() == orig.cumQty() && exe.avgPx() == orig.avgPx());
+		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.sts.ordStatus());
+		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == sts.orderId());
+		assert(exe.leavesQty() == (orr.qty() - orig.sts.cumQty()) && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Rejected
 	void reject() { reject(""); }
 	void reject(const std::string& reason) {
-		oms.OnMsg(tgt.sink().get_rjt(osr.orderId(), orig.orderId(), reason));
+		// erase this request from pending
+		orig.osv.erase(osr.orderId());
+		oms.OnMsg(tgt.sink().get_rjt(osr.orderId(), orig.sts.orderId(), reason));
 		check_reject();
 	}
 	void check_reject() {
+		sts.ordStatus(OrdStatus::Rejected);
+		auto ordS = orig.sts.ordStatus();
+		// if there are any cxl/rpl requests pending, then its status is reported
+		for (const auto& [k, v] : orig.osv)
+			ordS = v;
+
 		auto rjt = src.cxlRjt();
-		assert(rjt.status() == orig.ordStatus());
-		assert(rjt.origClOrdId() == orig.clOrdId() && rjt.clOrdId() == sts.clOrdId() && rjt.orderId() == orig.orderId());
+		assert(rjt.status() == orig.sts.ordStatus());
+		assert(rjt.origClOrdId() == orig.sts.clOrdId() && rjt.clOrdId() == sts.clOrdId() && rjt.orderId() == orig.sts.orderId());
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// Resend replace request again
