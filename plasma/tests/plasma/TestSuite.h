@@ -4,7 +4,7 @@
 #include <EPA.h>
 #include <plasma.h>
 #include <gtest/gtest.h>
-#include <TestSuiteY.h>
+#include <ReqState.h>
 
 /////////////////////////////////////////////////////////////////////////
 //

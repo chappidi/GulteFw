@@ -4,7 +4,7 @@
 #include <EPA.h>
 #include <Thor.h>
 #include <gtest/gtest.h>
-#include <TestSuiteN.h>
+#include <ReqState.h>
 
 /////////////////////////////////////////////////////////////////////////
 //
