@@ -1,5 +1,5 @@
 #include "TestSuite.h"
-
+#pragma region REJECT
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Cancel Request	(Y,X)
@@ -127,6 +127,8 @@ TEST_F(TestSuite, nos_ack_fill_cxl_fill_pnd_fill_rjt) {
 	idY.reject(reason);
 	idX.fill(3000);
 }
+#pragma endregion
+
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)

@@ -6,6 +6,7 @@ TEST_F(TestSuite, SIZE) {
 	std::cout << "sizeof(Order) " << sizeof(Order) << std::endl << std::endl;
 	std::cout << "sizeof(OrderV2) " << sizeof(OrderV2) << std::endl << std::endl;
 }
+#pragma region REJECT
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Reject			(X)
@@ -47,6 +48,69 @@ TEST_F(TestSuite, nos_ack_rjt) {
 	idX.accept();
 	idX.reject();
 }
+#pragma endregion
+
+#pragma region CANCELED
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Canceled		(X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
+TEST_F(TestSuite, nos_cxld) {
+	auto idX = new_order(10000);
+	idX.canceled();
+	idX.status();
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Pending Ack		(X)
+//  Canceled		(X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
+TEST_F(TestSuite, nos_pnd_cxld) {
+	auto idX = new_order(10000);
+	idX.pending();
+	idX.canceled();
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Pending Ack		(X)
+//  Ack				(X)
+//  Canceled		(X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
+TEST_F(TestSuite, nos_pnd_ack_cxld) {
+	auto idX = new_order(10000);
+	idX.pending();
+	idX.accept();
+	idX.canceled();
+}
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//  Canceled		(X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
+TEST_F(TestSuite, nos_ack_cxld) {
+	auto idX = new_order(10000);
+	idX.accept();
+	idX.canceled();
+}
+#pragma endregion
+
+#pragma region FILL
+///////////////////////////////////////////////////////////////
+//  NewOrderSingle	(X)
+//  Ack				(X)
+//	Fill			(X)
+//	Fill			(X)
+//	Fill			(X)
+//	https://www.onixs.biz/fix-dictionary/4.4/app_dA.1.a.html
+TEST_F(TestSuite, nos_fill) {
+	auto idX = new_order(10000);
+	// parital fill 2000
+	idX.fill(2000);
+	// parital fill 1000
+	idX.fill(1000);
+	// complete fill 7000
+	idX.fill(7000);
+}
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
@@ -84,17 +148,6 @@ TEST_F(TestSuite, nos_ack_fill_done) {
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
-//  Canceled		(X)
-//	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
-TEST_F(TestSuite, nos_ack_cxld) {
-	auto idX = new_order(10000);
-	idX.accept();
-	// canceled
-	idX.canceled();
-}
-///////////////////////////////////////////////////////////////
-//  NewOrderSingle	(X)
-//  Ack				(X)
 //	Fill			(X)
 //  Canceled		(X)
 //	https://www.onixs.biz/fix-dictionary/4.4/app_dE.1.b.html
@@ -123,3 +176,4 @@ TEST_F(TestSuite, nos_dup) {
 	// resend
 	idX.resend();
 }
+#pragma endregion

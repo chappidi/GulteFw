@@ -26,7 +26,8 @@ namespace plasma
 		uint8_t id() { return 0; }
 		OMS() {
 			// dummy order.
-			_orders.push_back(nullptr);
+			for(int i=0; i < 11; i++)
+				_orders.push_back(nullptr);
 		}
 		void OnMsg(const NewOrderSingle& req);
 		void OnMsg(const OrderCancelRequest& req);

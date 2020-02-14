@@ -11,6 +11,8 @@ namespace plasma
 			// check range & match clOrderId
 			if (_orders.size() >= orderId && _orders[orderId]->_srcOrdId == clOrdId) {
 				return _orders[orderId];
+			} else {
+				int k = 0;
 			}
 		}
 		ClientId cltId(clOrdId);

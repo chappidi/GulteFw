@@ -168,9 +168,8 @@ class NewOrderReq : public OrderReq
 	}
 	/////////////////////////////////////////////////////////////////////////
 	// publish request and fill in osr and expected sts 
-	void send_request() {
-		//publish nos
-		oms.OnMsg(nos);
+	void check_sent() {
+		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << tgt.clOrdId() << "]" << std::endl;
 		// fill in osr
 		osr.clOrdId(nos.clOrdId()).orderId(tgt.clOrdId())
 			.symbol(nos.symbol()).side(nos.side()).qty(nos.qty());
@@ -185,8 +184,8 @@ class NewOrderReq : public OrderReq
 	NewOrderReq(OrderReq& prnt, ITarget& tg, double qty)
 		: OrderReq(prnt.oms, dynamic_cast<ISource&>(prnt.tgt), tg), _prnt(&prnt), nos(create(qty, &prnt))
 	{
-		send_request();
-		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
+		oms.OnMsg(nos);
+		check_sent();
 		check_status();
 	}
 public:
@@ -195,8 +194,8 @@ public:
 	NewOrderReq(plasma::ICallback& pls, ISource& sr, ITarget& tg, double qty)
 		: OrderReq(pls, sr, tg), nos(create(qty, _prnt)) 
 	{
-		send_request();
-		std::cout << "[" << ClientId(nos.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
+		oms.OnMsg(nos);
+		check_sent();
 		check_status();
 	}
 #pragma region actions
@@ -289,9 +288,8 @@ class CancelReq : public IRequest {
 	}
 	/////////////////////////////////////////////////////////////////////////
 	// publish request and fill in osr and expected sts 
-	void send_request() {
-		//publish
-		oms.OnMsg(ocr);
+	void check_sent() {
+		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << tgt.clOrdId() << "]" << std::endl;
 		// fill in osr
 		osr.clOrdId(ocr.clOrdId()).orderId(tgt.clOrdId())
 			.symbol(ocr.symbol()).side(ocr.side()).qty(ocr.qty());
@@ -306,8 +304,9 @@ class CancelReq : public IRequest {
 	CancelReq(OrderReq& org)
 		: IRequest(org.oms, org.src, org.tgt), orig(org), ocr(create(org.sts))
 	{
-		send_request();
-		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
+		oms.OnMsg(ocr);
+		check_sent();
+		check_status();
 	}
 public:
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -355,6 +354,7 @@ public:
 	void check_accept() {
 		sts.ordStatus(OrdStatus::Canceled);
 		orig.sts.ordStatus(OrdStatus::Canceled);
+		orig.sts.leavesQty(0);
 
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Canceled && exe.ordStatus() == OrdStatus::Canceled);
@@ -375,7 +375,7 @@ public:
 	void check_reject() {
 		sts.ordStatus(OrdStatus::Rejected);
 		// if there are any cxl/rpl requests pending, then its status is reported
-		auto ordS = orig.osv.empty() ? sts.ordStatus() : orig.osv.begin()->second;
+		auto ordS = orig.osv.empty() ? orig.sts.ordStatus() : orig.osv.begin()->second;
 
 		auto rjt = src.cxlRjt();
 		assert(rjt.status() == ordS);
@@ -410,9 +410,8 @@ class ReplaceReq : public OrderReq {
 	}
 	/////////////////////////////////////////////////////////////////////////
 	// publish request and fill in osr and expected sts 
-	void send_request() {
-		// publish
-		oms.OnMsg(orr);
+	void check_sent() {
+		std::cout << "[" << ClientId(orr.clOrdId()) << "-->" << tgt.clOrdId() << "]" << std::endl;
 		// fill in osr
 		osr.clOrdId(orr.clOrdId()).orderId(tgt.clOrdId())
 			.symbol(orr.symbol()).side(orr.side()).qty(orr.qty());
@@ -426,8 +425,9 @@ class ReplaceReq : public OrderReq {
 	// constructor ( orig request which needs to be replaced and new qty)
 	ReplaceReq(OrderReq& org, double qty)
 		: OrderReq(org.oms, org.src, org.tgt), orig(org), orr(create(org.sts, qty)) {
-		send_request();
-		std::cout << "[" << ClientId(orr.clOrdId()) << "-->" << osr.orderId() << "]" << std::endl;
+		oms.OnMsg(orr);
+		check_sent();
+		check_status();
 	}
 public:
 	////////////////////////////////////////////////////////////////////////////////////////////
