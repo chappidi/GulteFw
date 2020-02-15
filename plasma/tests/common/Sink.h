@@ -242,6 +242,12 @@ struct Sink {
 		EOrder& sts = *_clt2Ord[clOrdId];
 		// copy the execution details to sts
 		sts.Update(orig);
+		if (sts.leavesQty() == 0) {
+			sts._status = OrdStatus::Filled;
+		}
+		else {
+			sts._status = OrdStatus::Partially_Filled;
+		}
 		// terminal state
 		orig._status = OrdStatus::Replaced;
 
@@ -250,6 +256,14 @@ struct Sink {
 		rpt.origClOrdId(origClOrdId);
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Replace);
+		// pending cancel requests
+		if (sts._head_cxl != 0) {
+			rpt.ordStatus(OrdStatus::Pending_Cancel);
+		}
+		// pending replace requests
+		if (sts._head_rpl != 0) {
+			rpt.ordStatus(OrdStatus::Pending_Replace);
+		}
 		return rpt;
 	}
 };

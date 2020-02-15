@@ -62,6 +62,8 @@ struct Order final
 		_side = req.side();
 		_qty = req.qty();
 		_target = orig.target();
+		// status
+		_leavesQty = _qty;
 	}
 	void Update(const ExecutionReport& rpt)
 	{
