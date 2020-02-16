@@ -129,6 +129,7 @@ TEST_F(TestSuite, nos_ack_fill_cxl_fill_pnd_fill_rjt) {
 }
 #pragma endregion
 
+#pragma region CANCELED
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
@@ -231,6 +232,7 @@ TEST_F(TestSuite, nos_cxl_ack_pnd_cxld) {
 	idY.pending();
 	idY.accept();
 }
+#pragma endregion
 ///////////////////////////////////////////////////////////////
 //  Cancel Request	(Y,X)
 //	Cancel Reject	(Y,X)
@@ -242,6 +244,7 @@ TEST_F(TestSuite, cxl_rjt_unknwn) {
 	// plasma will reject it automatically
 //	auto idY = idX.cancel_order();
 }
+#pragma region CXL_MULTI
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
@@ -332,3 +335,4 @@ TEST_F(TestSuite, nos_cxl_cxl_cxl_fill_rjt_rjt_fill_rjt) {
 	idX.fill(1500);
 	idY.reject(reason);
 }
+#pragma endregion

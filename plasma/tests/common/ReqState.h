@@ -12,8 +12,6 @@ struct IRequest {
 	ISource&			src;
 	// report generator
 	ITarget&			tgt;
-	// alternate representation of request. used to store plasma id
-	PROXY<OrderStatusRequest>	osr;
 	// expected status for comparison
 	PROXY<ExecutionReport>		sts;
 
@@ -28,7 +26,7 @@ struct IRequest {
 	virtual void accept() = 0;
 	virtual void reject() = 0;
 	virtual void resend() = 0;
-	virtual void status() const { oms.OnMsg(osr); }
+	virtual void status() = 0;
 
 	/////////////////////////////////////////////////////////////////////////
 	// validate the  duplicate req response
@@ -54,6 +52,8 @@ class NewOrderReq;
 struct OrderReq : public IRequest
 {
 	map<uint32_t, OrdStatus::Value> osv;
+	// alternate representation of request. used to store plasma id
+	PROXY<OrderStatusRequest>	osr;
 public:
 	/////////////////////////////////////////////////////////////////////////
 	// constructor forward arguments
@@ -64,12 +64,14 @@ public:
 	CancelReq	cancel_order();
 	ReplaceReq	replace_order(double qty);
 	NewOrderReq slice_order(ITarget& tgt, double qty);
+	void status() { check_status(); }
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// send a OrderStatusRequest and validate the received message
 	// validates the recovery process
 	void check_status() {
 		// if there are any cxl/rpl requests pending, then adjust the status
-		auto ordS = osv.empty() ? sts.ordStatus() : osv.begin()->second;
+		// sts.ordStatus == Canceled. then final
+		auto ordS = (osv.empty() || sts.ordStatus() == OrdStatus::Canceled) ? sts.ordStatus() : osv.begin()->second;
 		// query and receive the response
 		oms.OnMsg(osr);	
 		auto exe = src.execRpt(sts.clOrdId());
@@ -226,9 +228,10 @@ public:
 	void check_accept() {
 		// need to set. because resend will compare against it
 		sts.ordStatus(OrdStatus::New);
+		auto ordS = osv.empty() ? sts.ordStatus() : osv.begin()->second;
 
 		auto exe = src.execRpt(sts.clOrdId());
-		assert(exe.execType() == ExecType::New && exe.ordStatus() == OrdStatus::New);
+		assert(exe.execType() == ExecType::New && exe.ordStatus() == ordS);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
 		assert(exe.leavesQty() == sts.qty() && exe.cumQty() == 0 && exe.avgPx() == 0);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
@@ -291,8 +294,7 @@ class CancelReq : public IRequest {
 	void check_sent() {
 		std::cout << "[" << ClientId(ocr.clOrdId()) << "-->" << tgt.clOrdId() << "]" << std::endl;
 		// fill in osr
-		osr.clOrdId(ocr.clOrdId()).orderId(tgt.clOrdId())
-			.symbol(ocr.symbol()).side(ocr.side()).qty(ocr.qty());
+//		osr.clOrdId(ocr.clOrdId()).orderId(tgt.clOrdId()).symbol(ocr.symbol()).side(ocr.side()).qty(ocr.qty());
 		// fill in sts
 		sts.origClOrdId(ocr.origClOrdId()).clOrdId(ocr.clOrdId()).orderId(tgt.clOrdId())
 			.symbol(ocr.symbol()).side(ocr.side()).qty(ocr.qty())
@@ -309,27 +311,31 @@ class CancelReq : public IRequest {
 		check_status();
 	}
 public:
+	void status() { check_status(); }
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	void check_status() {
 		// orig request status
 		orig.check_status();
 
+		// No Need to check status of cancel req.
+		return;
+
 		// cancel request status
-		oms.OnMsg(osr);
-		auto exe = src.execRpt(sts.clOrdId());
-		assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == sts.ordStatus());
-		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
-		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
+		//oms.OnMsg(osr);
+		//auto exe = src.execRpt(sts.clOrdId());
+		//assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == sts.ordStatus());
+		//assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
+		//assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		//assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 #pragma region actions
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Pending_Cancel
 	void pending() {
-		oms.OnMsg(tgt.sink().get_pnd_cxl(osr.orderId(), orig.sts.orderId()));
+		oms.OnMsg(tgt.sink().get_pnd_cxl(sts.orderId(), orig.sts.orderId()));
 		// add to the orig awaiting pending_cancel
-		orig.osv[osr.orderId()] = OrdStatus::Pending_Cancel;
+		orig.osv[sts.orderId()] = OrdStatus::Pending_Cancel;
 		check_pending();
 		check_status();
 	}
@@ -346,8 +352,8 @@ public:
 	// order = OrdStatus::Canceled
 	void accept() {
 		// erase this request from pending
-		orig.osv.erase(osr.orderId());
-		oms.OnMsg(tgt.sink().get_cxld(osr.orderId(), orig.sts.orderId()));
+		orig.osv.erase(sts.orderId());
+		oms.OnMsg(tgt.sink().get_cxld(sts.orderId(), orig.sts.orderId()));
 		check_accept();
 		check_status();
 	}
@@ -367,8 +373,8 @@ public:
 	void reject() { reject(""); }
 	void reject(const std::string& reason) {
 		// erase this request from pending
-		orig.osv.erase(osr.orderId());
-		oms.OnMsg(tgt.sink().get_rjt(osr.orderId(), orig.sts.orderId(), reason));
+		orig.osv.erase(sts.orderId());
+		oms.OnMsg(tgt.sink().get_rjt(sts.orderId(), orig.sts.orderId(), reason));
 		check_reject();
 		check_status();
 	}

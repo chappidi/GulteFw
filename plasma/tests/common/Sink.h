@@ -32,6 +32,14 @@ struct Sink {
 		rpt << sts;
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::New);
+		// pending cancel requests
+		if (sts._head_cxl != 0) {
+			rpt.ordStatus(OrdStatus::Pending_Cancel);
+		}
+		// pending replace requests
+		if (sts._head_rpl != 0) {
+			rpt.ordStatus(OrdStatus::Pending_Replace);
+		}
 		return rpt;
 	}
 	// Reject NewOrderSingle
