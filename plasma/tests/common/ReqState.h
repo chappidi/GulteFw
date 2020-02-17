@@ -68,7 +68,7 @@ public:
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// send a OrderStatusRequest and validate the received message
 	// validates the recovery process
-	void check_status() {
+	virtual void check_status() {
 		// if there are any cxl/rpl requests pending, then adjust the status
 		// sts.ordStatus == Canceled. then final
 		auto ordS = (osv.empty() || sts.ordStatus() == OrdStatus::Canceled) ? sts.ordStatus() : osv.begin()->second;
@@ -157,6 +157,8 @@ class NewOrderReq : public OrderReq
 	/////////////////////////////////////////////////////////////////////////
 	// utility function
 	auto create(double_t qty, OrderReq* prnt) {
+
+		return src.get_nos(tgt.id(), qty, prnt != nullptr ? prnt->osr.orderId() : 0);
 		PROXY<NewOrderSingle> req;
 		// fill in the details
 		req.parent(prnt != nullptr ? prnt->osr.orderId() : 0)
@@ -259,6 +261,11 @@ public:
 	void resend() {
 		oms.OnMsg(nos);
 		check_resend();
+	}
+	void check_status() {
+		OrderReq::check_status();
+		if (_prnt != nullptr)
+			_prnt->check_status();
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// if it is a sliced order. u need to check if the fill is propagated to parent

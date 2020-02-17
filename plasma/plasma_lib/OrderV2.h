@@ -40,7 +40,7 @@ struct OrderV2 final
 
 	explicit OrderV2(uint32_t id, const NewOrderSingle& req)
 		: _plsOrdId(id) {
-		_parent = req.parentId();
+		_parent = req.parent();
 		_srcOrdId = req.clOrdId();
 		// economics
 		_symbol = req.symbol();
@@ -77,6 +77,14 @@ struct OrderV2 final
 		_cumQty = rpt.cumQty();
 		_leavesQty = rpt.leavesQty();
 		_avgPx = rpt.avgPx();
+	}
+	void fill(double lastQty, double lastPx) {
+		_avgPx = (_avgPx * _cumQty + lastQty * lastPx) / (_cumQty + lastQty);
+		_cumQty += lastQty;
+		_leavesQty -= lastQty;
+		if (!(_status == OrdStatus::Pending_Replace || _status == OrdStatus::Pending_Cancel)) {
+			_status = (_leavesQty == 0) ? OrdStatus::Filled : OrdStatus::Partially_Filled; 
+		}
 	}
 };
 /*

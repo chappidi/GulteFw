@@ -34,6 +34,7 @@ struct EOrder;
 struct Sink;
 
 struct ISource {
+	virtual PROXY<NewOrderSingle> get_nos(uint8_t tgt, double_t qty, uint32_t prnt) = 0;
 	virtual uint32_t req_seq_no() = 0;
 	virtual uint8_t id() = 0;
 	virtual const ExecutionReport& execRpt(uint32_t clOrdId) = 0;

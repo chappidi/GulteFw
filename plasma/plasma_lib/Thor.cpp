@@ -286,11 +286,32 @@ namespace plasma
 				exe.orderId((orig != nullptr && rpt.execType() != ExecType::Replace) ? orig->_plsOrdId : nxt->_plsOrdId);
 				itr->second._cb->OnMsg(exe);
 			}
+			// propagate the fill to parent
+			if (rpt.lastQty() != 0) {
+				fill_parent(rpt, nxt);
+			}
 		}
 		catch (exception & ex) {
 
 		}
-
+	}
+	void OMS_V2::fill_parent(const ExecutionReport& rpt, OrderV2* chld) {
+		OrderV2* prnt = chld->isChild() ? _orders[chld->_parent] : nullptr;
+		while (prnt != nullptr) {
+			prnt->fill(rpt.lastQty(), rpt.lastPx());
+			// send rpt out with updated status
+			ClientId clt(prnt->_srcOrdId);
+			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
+			{
+				Wrap<ExecutionReport> exe;
+				exe << (*prnt);
+				exe.execType(ExecType::Trade);
+				exe.lastPx(rpt.lastPx());
+				exe.lastQty(rpt.lastQty());
+				itr->second._cb->OnMsg(exe);
+			}
+			prnt = prnt->isChild() ? _orders[prnt->_parent] : nullptr;
+		}
 	}
 	//////////////////////////////////////////////////////////////////////
 	//

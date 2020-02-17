@@ -16,6 +16,19 @@ class GUI final : public ISource, public plasma::ICallback
 	map<uint32_t, PROXY<ExecutionReport>> execs;
 	PROXY<OrderCancelReject> rjt;
 public:
+	PROXY<NewOrderSingle> get_nos(uint8_t tgt, double_t qty, uint32_t prnt)
+	{
+		PROXY<NewOrderSingle> req;
+		// fill in the details
+		req.parent(prnt)
+			.clOrdId(req_seq_no())
+			.target(tgt)
+			.symbol(9999)
+			.side(plasma::client::Side::BUY)
+			.qty(qty);
+
+		return req;
+	}
 	uint32_t req_seq_no()	{ return req_id++; }
 	uint8_t  id()			{ return ID; }
 	const ExecutionReport& execRpt(uint32_t clOrdId) { 
