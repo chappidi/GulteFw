@@ -95,6 +95,7 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const Order& sts)
 	rpt.ordStatus(sts._status);
 	rpt.cumQty(sts._cumQty);
 	rpt.leavesQty(sts._leavesQty);
+	rpt.workingQty(sts._leavesQty);
 	rpt.avgPx(sts._avgPx);
 	// fill details
 	rpt.lastQty(0);

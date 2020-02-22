@@ -80,6 +80,7 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const EOrder& sts)
 	rpt.ordStatus(sts._status);
 	rpt.cumQty(sts._cumQty);
 	rpt.leavesQty(sts.leavesQty());
+	rpt.workingQty(sts.leavesQty());
 	rpt.avgPx(sts._avgPx);
 
 	rpt.lastQty(0);

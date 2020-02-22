@@ -52,6 +52,7 @@ struct Sink {
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Rejected);
 		rpt.leavesQty(0);
+		rpt.workingQty(0);
 		return rpt;
 	}
 	// Done_For_Day Execution Report
@@ -64,6 +65,7 @@ struct Sink {
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Done_For_Day);
 		rpt.leavesQty(0);
+		rpt.workingQty(0);
 		return rpt;
 	}
 	// Unsolicited cancel 
@@ -76,6 +78,7 @@ struct Sink {
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Canceled);
 		rpt.leavesQty(0);
+		rpt.workingQty(0);
 		return rpt;
 	}
 	/////////////////////////////////////////////////////////////
@@ -238,6 +241,7 @@ struct Sink {
 		rpt.execId(rpt_id++);
 		rpt.execType(ExecType::Canceled);
 		rpt.leavesQty(0);
+		rpt.workingQty(0);
 		return rpt;
 	}
 	/////////////////////////////////////////////////////////////

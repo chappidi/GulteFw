@@ -2,6 +2,7 @@
 #include "ICallback.h"
 #include "messages.h"
 #include <sstream>
+#include <iomanip> // required for std::setw
 #include <map>
 
 using namespace std;
@@ -49,20 +50,17 @@ public:
 		// Never receives it
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
-		stringstream strm;
-		strm << "\tGUI:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] ";
-		stringstream  sts;
-		sts << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
-		stringstream  sQty;
-		sQty << "[" << rpt.qty() << ", cq=" << rpt.cumQty() << ", lq=" << rpt.leavesQty() << ", wq=" << rpt.workingQty() << "]";
-		//		std::cout << strm.str() << sQty.str() << std::endl;
-		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
+		stringstream stm;
+		stm << "\tGUI:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << std::setw(6) << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] " 
+			<< std::setw(16) << ExecType::c_str(rpt.execType()) << " / " << std::left << std::setw(16) << OrdStatus::c_str(rpt.ordStatus())
+			<< " [" << std::setw(5) << rpt.qty() << " cq=" << std::setw(5) << rpt.cumQty() << " lq=" << std::setw(5) << rpt.leavesQty() << " wq=" << std::setw(5) << rpt.workingQty() << "]";
+		std::cout << stm.str() << std::endl;
 		execs[rpt.clOrdId()] = rpt;
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;
-		strm << "\tGUI:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
-		strm << OrdStatus::c_str(rpt.status());
+		strm << "\tGUI:\tRJT[(" << ClientId(rpt.clOrdId()) << "," << std::setw(6) << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] "
+			<< std::setw(16) << "" << " / " << std::left << std::setw(16) << OrdStatus::c_str(rpt.status());
 		std::cout << strm.str() << std::endl;
 		rjt = rpt;
 	}

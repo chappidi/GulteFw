@@ -80,13 +80,13 @@ public:
 		strm << "\tMLS:\tOSR[(" << req.clOrdId() << ")/" << req.orderId() << "]";
 	}
 	void OnMsg(const ExecutionReport& rpt) override {
-		stringstream strm;
-		strm << "\tMLS:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] ";
-		stringstream  sts;
-		sts << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
-		stringstream  sQty;
-		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
-		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
+		stringstream stm;
+		stm << "\tMLS:\tEXE[(" << ClientId(rpt.clOrdId()) << "," << std::setw(6) << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] "
+			<< std::setw(16) << ExecType::c_str(rpt.execType()) << " / " << std::left << std::setw(16) << OrdStatus::c_str(rpt.ordStatus())
+			<< " [" << std::setw(5) << rpt.qty() << " cq=" << std::setw(5) << rpt.cumQty() << " lq=" << std::setw(5) << rpt.leavesQty() 
+//			<< " wq=" << std::setw(5) << rpt.workingQty() 
+			<< "]";
+		std::cout << stm.str() << std::endl;
 
 		//update the parent. so that next parent fill can show  proper cumQty and leavesQty
 		if (rpt.lastQty() != 0) {
@@ -98,8 +98,8 @@ public:
 	}
 	void OnMsg(const OrderCancelReject& rpt) override {
 		stringstream strm;
-		strm << "\tMLS:\tRJT[" << ClientId(rpt.clOrdId()) << "/" << ClientId(rpt.origClOrdId()) << "/" << rpt.orderId() << "] ";
-		strm << OrdStatus::c_str(rpt.status());
+		strm << "\tMLS:\tRJT[(" << ClientId(rpt.clOrdId()) << "," << std::setw(6) << ClientId(rpt.origClOrdId()) << ")-->" << rpt.orderId() << "] "
+			<< std::setw(16) << "" << " / " << std::left << std::setw(16) << OrdStatus::c_str(rpt.status());
 		std::cout << strm.str() << std::endl;
 		rjt = rpt;
 	}

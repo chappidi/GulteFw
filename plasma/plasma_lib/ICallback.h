@@ -6,6 +6,7 @@
 #include <plasma_client/OrderCancelReject.h>
 #include <plasma_client/ExecutionReport.h>
 #include <plasma_client/DontKnowTrade.h>
+#include <sstream>
 #include <iostream>
 using namespace std;
 using namespace plasma::client;
@@ -17,7 +18,9 @@ struct ClientId {
 	inline uint32_t seq_no() const { return _id & 0x00FFFFFF; }
 };
 static ostream& operator << (ostream& out, const ClientId& id) {
-	out << (int)id.instance() << "." << id.seq_no();
+	stringstream stm;
+	stm << (int)id.instance() << "." << id.seq_no();
+	out << stm.str();
 	return out;
 }
 namespace plasma {
