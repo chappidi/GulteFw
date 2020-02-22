@@ -7,7 +7,7 @@ TEST_F(TestSuiteV2, nos_slice) {
 	auto ptX = new_order(mls, 10000);
 	ptX.pending();
 	ptX.accept();
-	ptX.fill(500, 99.98);
+	ptX.fill(500);
 
 	auto ch1X = ptX.slice_order(epa, 1000);
 	ch1X.accept();
@@ -38,11 +38,13 @@ TEST_F(TestSuiteV2, nos_over_slice) {
 	ch1X.accept();
 	ch1X.fill(200);
 	ch1X.fill(100);
-	ch1X.done();
 	ptX.fill(1500, 99.98);
 	// over slice
-	auto ch2X = ptX.slice_order(epa, 4000);
+	auto ch2X = ptX.slice_order(epa, 4000, OrdStatus::Rejected);
 	ch2X.status();
+	ch1X.done();
+	auto ch2X2 = ptX.slice_order(epa, 4000, OrdStatus::Rejected);
+	ch2X2.status();
 	ptX.fill(500, 99.98);
 }
 

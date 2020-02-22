@@ -63,7 +63,7 @@ public:
 	// request generators
 	CancelReq	cancel_order();
 	ReplaceReq	replace_order(double qty);
-	NewOrderReq slice_order(ITarget& tgt, double qty);
+	NewOrderReq slice_order(ITarget& tgt, double qty, OrdStatus::Value sts = OrdStatus::NA);
 	void status() { check_status(); }
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// send a OrderStatusRequest and validate the received message
@@ -185,11 +185,15 @@ class NewOrderReq : public OrderReq
 	}
 	/////////////////////////////////////////////////////////////////////////
 	// constructor ( used for slice order)
-	NewOrderReq(OrderReq& prnt, ITarget& tg, double qty)
+	NewOrderReq(OrderReq& prnt, ITarget& tg, double qty, OrdStatus::Value expSts)
 		: OrderReq(prnt.oms, dynamic_cast<ISource&>(prnt.tgt), tg), _prnt(&prnt), nos(create(qty, &prnt))
 	{
 		oms.OnMsg(nos);
 		check_sent();
+		if (expSts == OrdStatus::Rejected) {
+			sts.ordStatus(OrdStatus::Rejected);
+			sts.leavesQty(0);
+		}
 		check_status();
 	}
 public:
@@ -436,10 +440,14 @@ class ReplaceReq : public OrderReq {
 	}
 	/////////////////////////////////////////////////////////////////////////
 	// constructor ( orig request which needs to be replaced and new qty)
-	ReplaceReq(OrderReq& org, double qty)
+	ReplaceReq(OrderReq& org, double qty, OrdStatus::Value expSts = OrdStatus::NA)
 		: OrderReq(org.oms, org.src, org.tgt), orig(org), orr(create(org.sts, qty)) {
 		oms.OnMsg(orr);
 		check_sent();
+		if (expSts == OrdStatus::Rejected) {
+			sts.ordStatus(OrdStatus::Rejected);
+//			sts.leavesQty(0);
+		}
 		check_status();
 	}
 public:
@@ -533,6 +541,6 @@ inline CancelReq OrderReq::cancel_order() {
 inline ReplaceReq OrderReq::replace_order(double qty) {
 	return ReplaceReq(*this, qty);
 }
-inline NewOrderReq OrderReq::slice_order(ITarget& tgt, double qty) {
-	return NewOrderReq(*this, tgt, qty);
+inline NewOrderReq OrderReq::slice_order(ITarget& tgt, double qty, OrdStatus::Value sts) {
+	return NewOrderReq(*this, tgt, qty, sts);
 }

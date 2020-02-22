@@ -246,6 +246,72 @@ namespace plasma
 	}
 	//////////////////////////////////////////////////////////////////////
 	//
+	void OMS_V2::process(OrderV2& sts, const ExecutionReport& rpt) {
+		assert(!(rpt.execType() == ExecType::Pending_Cancel || rpt.execType() == ExecType::Pending_Replace || rpt.execType() == ExecType::Replace));
+		sts.Update(rpt);
+		// send rpt pit with updated status
+		ClientId clt(sts._srcOrdId);
+		if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
+		{
+			Wrap<ExecutionReport> exe(rpt);
+			exe.origClOrdId(0);
+			exe.clOrdId(sts._srcOrdId);
+			exe.orderId(rpt.clOrdId());
+			itr->second._cb->OnMsg(exe);
+		}
+		// propagate the fill to parent
+		if (rpt.lastQty() != 0) {
+			fill_parent(rpt, sts);
+		}
+		if (rpt.ordStatus() == OrdStatus::Canceled || rpt.ordStatus() == OrdStatus::Done_For_Day) {
+			auto diff = sts._qty - sts._cumQty;
+			if (diff != 0) {
+				OrderV2* prnt = sts.isChild() ? _orders[sts._parent] : nullptr;
+				while (prnt != nullptr) {
+					// update parent slicedQty
+					prnt->_slicedQty -= diff;
+					// send status message out
+					ClientId clt(prnt->_srcOrdId);
+					if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end()) {
+						Wrap<ExecutionReport> exe;
+						exe << (*prnt);
+						exe.execType(ExecType::Order_Status);
+						itr->second._cb->OnMsg(exe);
+					}
+					prnt = prnt->isChild() ? _orders[prnt->_parent] : nullptr;
+				}
+			}
+		}
+	}
+	//////////////////////////////////////////////////////////////////////
+	//
+	void OMS_V2::process(OrderV2& orig, OrderV2& sts, const ExecutionReport& rpt) {
+		assert(orig._symbol == sts._symbol && orig._side == sts._side);
+		assert(rpt.execType() == ExecType::Pending_Cancel || rpt.execType() == ExecType::Pending_Replace || rpt.execType() == ExecType::Canceled || rpt.execType() == ExecType::Replace);
+		// update orig order
+		orig.Update(rpt);
+		// if Repalace or not unsolicited cancel
+		if (rpt.execType() == ExecType::Canceled || rpt.execType() == ExecType::Replace) {
+			orig._chain = sts._plsOrdId;
+			//TODO: this should be done only when the order is replaced
+			sts.Update(rpt);
+		}
+		else {
+			int k = 0;
+		}
+		// send rpt pit with updated status
+		ClientId clt(sts._srcOrdId);
+		if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
+		{
+			Wrap<ExecutionReport> exe(rpt);
+			exe.origClOrdId(orig._srcOrdId);
+			exe.clOrdId(sts._srcOrdId);
+			exe.orderId(rpt.execType() == ExecType::Replace ? rpt.clOrdId() : rpt.origClOrdId());
+			itr->second._cb->OnMsg(exe);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////
+	//
 	void OMS_V2::OnMsg(const ExecutionReport& rpt)
 	{
 		ClientId cltId(rpt.execId());
@@ -265,38 +331,20 @@ namespace plasma
 			// step: validate
 			assert(nxt != nullptr);
 			assert(nxt->_symbol == rpt.symbol() && nxt->_side == rpt.side());
-			assert((orig == nullptr) || (orig->_symbol == nxt->_symbol && orig->_side == nxt->_side));
 
-			// TODO: update state
-			if (orig != nullptr) {
-				orig->Update(rpt);
-			}
-			// if Replace or not Unsolicited cancel
-			if ((rpt.execType() == ExecType::Canceled && orig != nullptr) || rpt.execType() == ExecType::Replace) {
-				orig->_chain = nxt->_plsOrdId;
-			}
-			nxt->Update(rpt);
-			// send rpt out with updated status
-			ClientId clt(nxt->_srcOrdId);
-			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
-			{
-				Wrap<ExecutionReport> exe(rpt);
-				exe.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
-				exe.clOrdId(nxt->_srcOrdId);
-				exe.orderId((orig != nullptr && rpt.execType() != ExecType::Replace) ? orig->_plsOrdId : nxt->_plsOrdId);
-				itr->second._cb->OnMsg(exe);
-			}
-			// propagate the fill to parent
-			if (rpt.lastQty() != 0) {
-				fill_parent(rpt, nxt);
-			}
+			if (orig == nullptr)
+				process(*nxt, rpt);
+			else
+				process(*orig, *nxt, rpt);
 		}
 		catch (exception & ex) {
 
 		}
 	}
-	void OMS_V2::fill_parent(const ExecutionReport& rpt, OrderV2* chld) {
-		OrderV2* prnt = chld->isChild() ? _orders[chld->_parent] : nullptr;
+	//////////////////////////////////////////////////////////////////////
+	//
+	void OMS_V2::fill_parent(const ExecutionReport& rpt, OrderV2& chld) {
+		OrderV2* prnt = chld.isChild() ? _orders[chld._parent] : nullptr;
 		while (prnt != nullptr) {
 			prnt->fill(rpt.lastQty(), rpt.lastPx());
 			// send rpt out with updated status

@@ -114,9 +114,10 @@
     <field name="ordStatus"   id="10" type="OrdStatus"  description="current status of order"/>
     <field name="cumQty"      id="11" type="double"  description="cumulative quantity executed"/>
     <field name="leavesQty"   id="12" type="double"  description="leaves quantity"/>
-    <field name="avgPx"       id="13" type="double"  description="execution average price"/>
-    <field name="lastQty"     id="14" type="double"  description="last executed quantity"/>
-    <field name="lastPx"      id="15" type="double"  description="last executed price"/>
+    <field name="workingQty"  id="13" type="double"  description="working quantity"/>
+    <field name="avgPx"       id="14" type="double"  description="execution average price"/>
+    <field name="lastQty"     id="15" type="double"  description="last executed quantity"/>
+    <field name="lastPx"      id="16" type="double"  description="last executed price"/>
   </message>
   <message name="TestRequest"         id="10" description="Test Request">
     <field name="testReqId"   id="1"  type="uint64"  description="unique id"/>

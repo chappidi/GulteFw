@@ -54,7 +54,7 @@ public:
 		stringstream  sts;
 		sts << ExecType::c_str(rpt.execType()) << " / " << OrdStatus::c_str(rpt.ordStatus());
 		stringstream  sQty;
-		sQty << "[" << rpt.qty() << "," << rpt.cumQty() << "," << rpt.leavesQty() << "]";
+		sQty << "[" << rpt.qty() << ", cq=" << rpt.cumQty() << ", lq=" << rpt.leavesQty() << ", wq=" << rpt.workingQty() << "]";
 		//		std::cout << strm.str() << sQty.str() << std::endl;
 		printf("%20s %15s / %15s %20s\n", strm.str().c_str(), ExecType::c_str(rpt.execType()), OrdStatus::c_str(rpt.ordStatus()), sQty.str().c_str());
 		execs[rpt.clOrdId()] = rpt;

@@ -22,6 +22,8 @@ namespace plasma
 		vector<Order*> _orders;
 		Order* lookup(uint32_t orderId, uint32_t clOrdId);
 		void get_status(ExecutionReport& rpt, const Order& req);
+		void process(Order& sts, const ExecutionReport& rpt);
+		void process(Order& orig, Order& sts, const ExecutionReport& rpt);
 	public:
 		uint8_t id() { return 0; }
 		OMS() {

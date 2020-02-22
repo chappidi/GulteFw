@@ -221,6 +221,51 @@ namespace plasma
 	}
 	//////////////////////////////////////////////////////////////////////
 	//
+	void OMS::process(Order& sts, const ExecutionReport& rpt) {
+		assert(!(rpt.execType() == ExecType::Pending_Cancel || rpt.execType() == ExecType::Pending_Replace || rpt.execType() == ExecType::Replace));
+		if (rpt.ordStatus() == OrdStatus::Canceled || rpt.ordStatus() == OrdStatus::Done_For_Day) {
+			int k = 0;
+		}
+		sts.Update(rpt);
+		// send rpt pit with updated status
+		ClientId clt(sts._srcOrdId);
+		if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
+		{
+			Wrap<ExecutionReport> exe(rpt);
+			exe.origClOrdId(0);
+			exe.clOrdId(sts._srcOrdId);
+			exe.orderId(rpt.clOrdId());
+			itr->second._cb->OnMsg(exe);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////
+	//
+	void OMS::process(Order& orig, Order& sts, const ExecutionReport& rpt) {
+		assert(orig._symbol == sts._symbol && orig._side == sts._side);
+		assert(rpt.execType() == ExecType::Pending_Cancel || rpt.execType() == ExecType::Pending_Replace || rpt.execType() == ExecType::Canceled || rpt.execType() == ExecType::Replace);
+		// update orig order
+		orig.Update(rpt);
+		// if Repalace or not unsolicited cancel
+		if (rpt.execType() == ExecType::Canceled || rpt.execType() == ExecType::Replace) {
+			orig._chain = sts._plsOrdId;
+			//TODO: this should be done only when the order is replaced
+			sts.Update(rpt);
+		} else {
+			int k = 0;
+		}
+		// send rpt pit with updated status
+		ClientId clt(sts._srcOrdId);
+		if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
+		{
+			Wrap<ExecutionReport> exe(rpt);
+			exe.origClOrdId(orig._srcOrdId);
+			exe.clOrdId(sts._srcOrdId);
+			exe.orderId(rpt.execType() == ExecType::Replace ? rpt.clOrdId() : rpt.origClOrdId());
+			itr->second._cb->OnMsg(exe);
+		}
+	}
+	//////////////////////////////////////////////////////////////////////
+	//
 	void OMS::OnMsg(const ExecutionReport& rpt) 
 	{
 		ClientId cltId(rpt.execId());
@@ -240,27 +285,11 @@ namespace plasma
 			// step: validate
 			assert(nxt != nullptr);
 			assert(nxt->_symbol == rpt.symbol() && nxt->_side == rpt.side());
-			assert((orig == nullptr) || (orig->_symbol == nxt->_symbol && orig->_side == nxt->_side));
 
-			// TODO: update state
-			if (orig != nullptr) {
-				orig->Update(rpt);
-			}
-			// if Replace or not Unsolicited cancel
-			if ((rpt.execType() == ExecType::Canceled && orig != nullptr) || rpt.execType() == ExecType::Replace) {
-				orig->_chain = nxt->_plsOrdId;
-			}
-			nxt->Update(rpt);
-			// send rpt out with updated status
-			ClientId clt(nxt->_srcOrdId);
-			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
-			{
-				Wrap<ExecutionReport> exe(rpt);
-				exe.origClOrdId((orig != nullptr) ? orig->_srcOrdId : 0);
-				exe.clOrdId(nxt->_srcOrdId);
-				exe.orderId((orig != nullptr && rpt.execType() != ExecType::Replace) ? orig->_plsOrdId : nxt->_plsOrdId);
-				itr->second._cb->OnMsg(exe);
-			}
+			if (orig == nullptr)
+				process(*nxt, rpt);
+			else
+				process(*orig, *nxt, rpt);
 		}
 		catch (exception & ex) {
 
@@ -268,7 +297,7 @@ namespace plasma
 
 	}
 	//////////////////////////////////////////////////////////////////////
-	//
+	// Reject for both Cancel & Replace Request
 	void OMS::OnMsg(const OrderCancelReject& rpt) 
 	{
 		try
@@ -296,7 +325,7 @@ namespace plasma
 				Wrap<OrderCancelReject> ocr(rpt);
 				ocr.clOrdId(sts->_srcOrdId);
 				ocr.origClOrdId(orig->_srcOrdId);
-				ocr.orderId(orig->_plsOrdId);
+				ocr.orderId(rpt.origClOrdId());
 				itr->second._cb->OnMsg(ocr);
 			}
 		}

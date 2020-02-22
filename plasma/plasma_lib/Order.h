@@ -67,6 +67,7 @@ struct Order final
 	}
 	void Update(const ExecutionReport& rpt)
 	{
+		assert(_dstOrdId == 0 || _dstOrdId == rpt.orderId());
 		_dstOrdId = rpt.orderId();
 		_status = rpt.ordStatus();
 		_cumQty = rpt.cumQty();

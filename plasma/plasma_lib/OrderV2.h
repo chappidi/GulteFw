@@ -107,6 +107,7 @@ static ExecutionReport& operator << (ExecutionReport& rpt, const OrderV2& sts)
 	rpt.ordStatus(sts._status);
 	rpt.cumQty(sts._cumQty);
 	rpt.leavesQty(sts._leavesQty);
+	rpt.workingQty(sts._slicedQty - sts._cumQty);
 	rpt.avgPx(sts._avgPx);
 	// fill details
 	rpt.lastQty(0);

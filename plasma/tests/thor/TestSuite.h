@@ -8,6 +8,23 @@
 
 /////////////////////////////////////////////////////////////////////////
 //
+class ParentNewOrderReq : public NewOrderReq {
+	ITarget& epa;
+public:
+	ParentNewOrderReq(plasma::ICallback& pls, ISource& sr, ITarget& ep, ITarget& tg, double qty)
+		:NewOrderReq(pls, sr, tg, qty), epa(ep)
+	{
+
+	}
+	void fill(double qty, double px = 99.98) {
+		auto ch = slice_order(epa, qty);
+		ch.accept();
+		ch.fill(qty, px);
+		ch.done();
+	}
+};
+/////////////////////////////////////////////////////////////////////////
+//
 //
 struct TestSuiteV2 : public testing::Test
 {
@@ -22,6 +39,6 @@ struct TestSuiteV2 : public testing::Test
 		oms.OnLogin(epa); 
 	}
 	auto new_order(ITarget& tgt, double qty) {
-		return NewOrderReq(oms, gui, tgt, qty);
+		return ParentNewOrderReq(oms, gui, epa, tgt, qty);
 	}
 };
