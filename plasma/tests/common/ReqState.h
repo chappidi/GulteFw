@@ -6,6 +6,7 @@
 // interface to define the functionality
 //
 struct IRequest {
+	const double AVGPX_EPSILON = 0.0001;
 	// OMS handle the messages
 	plasma::ICallback&	oms;
 	// request generator
@@ -78,7 +79,8 @@ public:
 		// validate the response
 		assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == ordS);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty());
+		assert(abs(exe.avgPx() - sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 #pragma region actions
@@ -103,7 +105,8 @@ public:
 
 		assert(exe.execType() == ExecType::Trade && exe.ordStatus() == ordS);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty());
+		assert(abs(exe.avgPx() - sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == qty && exe.lastPx() == px);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +124,8 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Done_For_Day && exe.ordStatus() == OrdStatus::Done_For_Day);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty());
+		assert(abs(exe.avgPx() - sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +360,8 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_Cancel && exe.ordStatus() == OrdStatus::Pending_Cancel);
 		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.sts.orderId());
-		assert(exe.leavesQty() == orig.sts.leavesQty() && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
+		assert(exe.leavesQty() == orig.sts.leavesQty() && exe.cumQty() == orig.sts.cumQty());
+		assert(abs(exe.avgPx() - orig.sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -376,7 +381,8 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Canceled && exe.ordStatus() == OrdStatus::Canceled);
 		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == ocr.clOrdId() && exe.orderId() == orig.sts.orderId());
-		assert(exe.leavesQty() == 0 && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
+		assert(exe.leavesQty() == 0 && exe.cumQty() == orig.sts.cumQty());
+		assert(abs(exe.avgPx() - orig.sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -457,7 +463,7 @@ public:
 		// orig request status
 		orig.check_status();
 
-		// cancel request status
+		// replace request status
 		oms.OnMsg(osr);
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == sts.ordStatus());

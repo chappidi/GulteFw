@@ -130,7 +130,7 @@ namespace plasma
 		}
 	}
 	//////////////////////////////////////////////////////////////////////
-	//
+	// TODO: if the actual orig is a child order. then adjust the slicedQty accordingly. 
 	void OMS_V2::OnMsg(const OrderReplaceRequest& req) {
 		stringstream strm;
 		strm << "PLS:\t\tORR[" << ClientId(req.clOrdId()) << "/" << ClientId(req.origClOrdId()) << "/" << req.orderId() << "]";
@@ -263,7 +263,7 @@ namespace plasma
 		if (rpt.lastQty() != 0) {
 			fill_parent(rpt, sts);
 		}
-		if (rpt.ordStatus() == OrdStatus::Canceled || rpt.ordStatus() == OrdStatus::Done_For_Day) {
+		if (rpt.execType() == ExecType::Canceled || rpt.execType() == ExecType::Done_For_Day) {
 			auto diff = sts._qty - sts._cumQty;
 			if (diff != 0) {
 				OrderV2* prnt = sts.isChild() ? _orders[sts._parent] : nullptr;
@@ -308,6 +308,30 @@ namespace plasma
 			exe.clOrdId(sts._srcOrdId);
 			exe.orderId(rpt.execType() == ExecType::Replace ? rpt.clOrdId() : rpt.origClOrdId());
 			itr->second._cb->OnMsg(exe);
+		}
+		// adjust the qty.
+		if (rpt.execType() == ExecType::Canceled) {
+			auto diff = sts._qty - sts._cumQty;
+			if (diff != 0) {
+				OrderV2* prnt = orig.isChild() ? _orders[orig._parent] : nullptr;
+				while (prnt != nullptr) {
+					// update parent slicedQty
+					prnt->_slicedQty -= diff;
+					// send status message out
+					ClientId clt(prnt->_srcOrdId);
+					if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end()) {
+						Wrap<ExecutionReport> exe;
+						exe << (*prnt);
+						exe.execType(ExecType::Order_Status);
+						itr->second._cb->OnMsg(exe);
+					}
+					prnt = prnt->isChild() ? _orders[prnt->_parent] : nullptr;
+				}
+			}
+		}
+		// depending on the new qty adjust the slice
+		if (rpt.execType() == ExecType::Replace) {
+
 		}
 	}
 	//////////////////////////////////////////////////////////////////////
@@ -393,6 +417,7 @@ namespace plasma
 				ocr.orderId(orig->_plsOrdId);
 				itr->second._cb->OnMsg(ocr);
 			}
+			// TODO: if the replace is rejected. and the sliced qty has to be adjusted
 		}
 		catch (exception & ex) {
 			// TODO:
