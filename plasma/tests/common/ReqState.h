@@ -60,6 +60,18 @@ public:
 	// constructor forward arguments
 	OrderReq(plasma::ICallback& pls, ISource& sr, ITarget& tg) : IRequest(pls, sr, tg){ }
 
+	virtual void update(const ExecutionReport& rpt) {
+		if (sts.origClOrdId() == 0)
+			sts.origClOrdId(sts.clOrdId());
+
+		sts.ordStatus(rpt.ordStatus());
+		sts.clOrdId(rpt.clOrdId());
+		sts.orderId(rpt.orderId());
+		sts.qty(rpt.qty());
+		sts.leavesQty(rpt.leavesQty());
+		sts.cumQty(rpt.cumQty());
+		sts.avgPx(rpt.avgPx());
+	}
 	/////////////////////////////////////////////////////////////////////////
 	// request generators
 	CancelReq	cancel_order();
@@ -78,7 +90,7 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		// validate the response
 		assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == ordS);
-		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
+		assert(exe.origClOrdId() == sts.origClOrdId() && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
 		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty());
 		assert(abs(exe.avgPx() - sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
@@ -143,7 +155,8 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Canceled && exe.ordStatus() == OrdStatus::Canceled);
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		assert(exe.leavesQty() == 0 && exe.cumQty() == sts.cumQty());
+		assert(abs(exe.avgPx() - sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 #pragma endregion
@@ -288,7 +301,7 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////
-//
+// Cancel existing Order and state management validation
 //
 class CancelReq : public IRequest {
 	// orig order which needs to be canceled
@@ -328,7 +341,8 @@ class CancelReq : public IRequest {
 public:
 	void status() { check_status(); }
 	////////////////////////////////////////////////////////////////////////////////////////////
-	//
+	// check the status of orig req. 
+	// there is no action to be done on cancel req. no need to check status
 	void check_status() {
 		// orig request status
 		orig.check_status();
@@ -415,7 +429,7 @@ public:
 };
 
 /////////////////////////////////////////////////////////////////////////
-//
+// Replace existing Order and state management validation
 //
 class ReplaceReq : public OrderReq {
 	// orig order which needs to be replaced
@@ -454,9 +468,21 @@ class ReplaceReq : public OrderReq {
 			sts.ordStatus(OrdStatus::Rejected);
 //			sts.leavesQty(0);
 		}
-		check_status();
+		// just check the orig status. 
+		// no need to check the replace status as it is not pending/accepted/rejected yet
+		orig.check_status();
 	}
 public:
+	void update(const ExecutionReport& rpt) {
+		orig.update(rpt);		
+		OrderReq::update(rpt);
+	}
+	void check_fill(double qty, double px) {
+		OrderReq::check_fill(qty,px);
+		auto exe = src.execRpt(sts.clOrdId());
+		// orig order update
+		orig.update(exe);
+	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	//
 	void check_status() {
@@ -468,7 +494,8 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Order_Status && exe.ordStatus() == sts.ordStatus());
 		assert(exe.origClOrdId() == 0 && exe.clOrdId() == sts.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty() && exe.avgPx() == sts.avgPx());
+		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == sts.cumQty());
+		assert(abs(exe.avgPx() - sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 #pragma region actions
@@ -479,7 +506,8 @@ public:
 		// add to the orig awaiting Pending_Replace
 		orig.osv[osr.orderId()] = OrdStatus::Pending_Replace;
 		check_pending();
-		check_status();
+		// no need to check the rpl ordsts.
+		orig.check_status();
 	}
 	void check_pending() {
 		sts.ordStatus(OrdStatus::Pending_Replace);
@@ -487,7 +515,8 @@ public:
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Pending_Replace && exe.ordStatus() == OrdStatus::Pending_Replace);
 		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == orig.sts.orderId());
-		assert(exe.leavesQty() == orig.sts.leavesQty() && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
+		assert(exe.leavesQty() == orig.sts.leavesQty() && exe.cumQty() == orig.sts.cumQty());
+		assert(abs(exe.avgPx() - orig.sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
@@ -503,12 +532,17 @@ public:
 		sts.leavesQty(sts.qty() - orig.sts.cumQty());
 		sts.cumQty(orig.sts.cumQty());
 		sts.avgPx(orig.sts.avgPx());
+		sts.ordStatus(orig.sts.ordStatus());
 
 		auto exe = src.execRpt(sts.clOrdId());
 		assert(exe.execType() == ExecType::Replace && exe.ordStatus() == orig.sts.ordStatus());
 		assert(exe.origClOrdId() == orig.sts.clOrdId() && exe.clOrdId() == orr.clOrdId() && exe.orderId() == sts.orderId());
-		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == orig.sts.cumQty() && exe.avgPx() == orig.sts.avgPx());
+		assert(exe.leavesQty() == sts.leavesQty() && exe.cumQty() == orig.sts.cumQty());
+		assert(abs(exe.avgPx() - orig.sts.avgPx()) < AVGPX_EPSILON);
 		assert(exe.lastQty() == 0 && exe.lastPx() == 0);
+
+		// orig order replaced
+		orig.update(exe);
 	}
 	////////////////////////////////////////////////////////////////////////////////////////////
 	// order = OrdStatus::Rejected
@@ -522,8 +556,9 @@ public:
 	}
 	void check_reject() {
 		sts.ordStatus(OrdStatus::Rejected);
+		sts.leavesQty(0);
 		// if there are any cxl/rpl requests pending, then its status is reported
-		auto ordS = orig.osv.empty() ? sts.ordStatus() : orig.osv.begin()->second;
+		auto ordS = orig.osv.empty() ? orig.sts.ordStatus() : orig.osv.begin()->second;
 
 		auto rjt = src.cxlRjt();
 		assert(rjt.status() == ordS);

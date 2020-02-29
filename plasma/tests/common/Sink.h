@@ -257,7 +257,7 @@ struct Sink {
 		if (sts.leavesQty() == 0) {
 			sts._status = OrdStatus::Filled;
 		}
-		else {
+		else if(sts._cumQty != 0) {
 			sts._status = OrdStatus::Partially_Filled;
 		}
 		// terminal state

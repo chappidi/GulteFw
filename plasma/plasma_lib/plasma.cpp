@@ -251,7 +251,7 @@ namespace plasma
 			//TODO: this should be done only when the order is replaced
 			sts.Update(rpt);
 		} else {
-			int k = 0;
+			sts._status = rpt.ordStatus();
 		}
 		// send rpt pit with updated status
 		ClientId clt(sts._srcOrdId);
