@@ -14,4 +14,5 @@ set_target_properties(aeron_client PROPERTIES
 
 add_library(AERON STATIC AeronClient.cpp)
 target_include_directories(AERON PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(AERON PUBLIC aeron_driver aeron_client)
+target_link_libraries(AERON PUBLIC aeron_client)
+#target_link_libraries(AERON PUBLIC aeron_driver aeron_client)
