@@ -1,5 +1,6 @@
 #include "TestSuite.h"
 
+#pragma region REJECT
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Replace Request	(Y,X)
@@ -126,6 +127,9 @@ TEST_F(TestSuite, nos_ack_fill_rpl_fill_pnd_fill_rjt) {
 	idX.fill(5000);
 	idY.reject(reason);
 }
+#pragma endregion
+
+#pragma region REPLACED
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
@@ -169,6 +173,9 @@ TEST_F(TestSuite, nos_ack_fill_rpl_fill_rpld_fill_fill) {
 	idY.accept();
 	idY.fill(5000);
 }
+#pragma endregion
+
+#pragma region REPACE_MULTI
 ///////////////////////////////////////////////////////////////
 //  NewOrderSingle	(X)
 //  Ack				(X)
@@ -209,3 +216,4 @@ TEST_F(TestSuite, nos_rpl_rpld_rpl_rpld) {
 	idZ.fill(500);
 	idQ.accept();
 }
+#pragma endregion
