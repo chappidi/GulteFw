@@ -4,17 +4,23 @@
 #include <plasma_client/OrderCancelReject.h>
 #include <plasma_client/ExecutionReport.h>
 
+using namespace plasma;
 template<typename T>
 struct Wrap : public T {
+	ICallback& _cb;
 	char data[1024];
-	Wrap() {
+	Wrap(ICallback& cb): _cb(cb) {
 		wrapAndApplyHeader(data, 0, 1024);
 	}
-	Wrap(const T& o) {
+	Wrap(ICallback& cb, const T& o): _cb(cb) {
 		wrapAndApplyHeader(data, 0, 1024);
 		assert(sbeSchemaVersion() == o.sbeSchemaVersion());
 		memcpy(data, o.buffer(), o.bufferLength());
 	}
+	void commit() {
+		_cb.OnMsg(*this);
+	}
+//	~Wrap() { commit(); }
 };
 static ExecutionReport& operator << (ExecutionReport& rpt, const NewOrderSingle& req)
 {

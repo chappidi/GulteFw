@@ -38,11 +38,11 @@ namespace plasma
 			OrderV2* sts = lookup(0, req.clOrdId());
 			if (sts != nullptr) {
 				// https://www.onixs.biz/fix-dictionary/4.4/app_dF.1.b.html
-				Wrap<ExecutionReport> rpt;
+				Wrap<ExecutionReport> rpt(*(xyz._cb));
 				rpt << *sts;
 //				rpt.execType((PossResend == true) ? ExecType::Order_Status : ExecType::Rejected);
 				rpt.execType(ExecType::Rejected);
-				xyz._cb->OnMsg(rpt);
+				rpt.commit();
 				return;
 			}
 			// step : child order check for overslice.
@@ -54,12 +54,12 @@ namespace plasma
 				}
 				// no parent exists or oversliced
 				if (prnt == nullptr || prnt->_qty < req.qty() + prnt->_slicedQty) {
-					Wrap<ExecutionReport> rpt;
+					Wrap<ExecutionReport> rpt(*(xyz._cb));
 					rpt << req;
 					rpt.execType(ExecType::Rejected)
 						.ordStatus(OrdStatus::Rejected)
 						.leavesQty(0);
-					xyz._cb->OnMsg(rpt);
+					rpt.commit();
 					return;
 				}
 			}
@@ -77,9 +77,9 @@ namespace plasma
 			}
 			// step: publish new request to target
 			//TODO: do we need to make another copy. or just change the clOrdId and send it out
-			Wrap<NewOrderSingle> nos(req);
+			Wrap<NewOrderSingle> nos(*(_out_os[req.target()]._cb), req);
 			nos.clOrdId(id);
-			_out_os[req.target()]._cb->OnMsg(nos);
+			nos.commit();
 		}
 		catch (exception & ex) {
 
@@ -98,9 +98,9 @@ namespace plasma
 		{
 			OrderV2* orig = lookup(req.orderId(), req.origClOrdId());
 			if (orig == nullptr) {
-				Wrap<OrderCancelReject> rjt;
+				Wrap<OrderCancelReject> rjt(*(xyz._cb));
 				rjt << req;
-				xyz._cb->OnMsg(rjt);
+				rjt.commit();
 				return;
 			}
 			// TODO: check if req.clOrdId() is duplicate. what to do ????
@@ -119,11 +119,11 @@ namespace plasma
 			_orders.insert(_orders.end(), new OrderV2(id, req, *orig));
 			xyz._clnt2oms[req.clOrdId()] = id;
 			// step: publish new request to target
-			Wrap<OrderCancelRequest> ocr(req);
+			Wrap<OrderCancelRequest> ocr(*(_out_os[(*orig).target()]._cb), req);
 			ocr.clOrdId(id);
 			ocr.origClOrdId(orig->_plsOrdId);
 			ocr.orderId(orig->_dstOrdId);
-			_out_os[(*orig).target()]._cb->OnMsg(ocr);
+			ocr.commit();
 		}
 		catch (exception & ex) {
 
@@ -142,9 +142,9 @@ namespace plasma
 		{
 			OrderV2* orig = lookup(req.orderId(), req.origClOrdId());
 			if (orig == nullptr) {
-				Wrap<OrderCancelReject> rjt;
+				Wrap<OrderCancelReject> rjt(*(xyz._cb));
 				rjt << req;
-				xyz._cb->OnMsg(rjt);
+				rjt.commit();
 				return;
 			}
 			assert(orig->_side == req.side() && orig->_symbol == req.symbol());
@@ -165,11 +165,11 @@ namespace plasma
 			xyz._clnt2oms[req.clOrdId()] = id;
 			// step: publish new request to target
 			// I think it should be Pending_Replace.  if a OrderStatusRequest comes what will be the status?
-			Wrap<OrderReplaceRequest> orr(req);
+			Wrap<OrderReplaceRequest> orr(*(_out_os[(*orig).target()]._cb), req);
 			orr.clOrdId(id);
 			orr.origClOrdId(orig->_plsOrdId);
 			orr.orderId(orig->_dstOrdId);
-			_out_os[(*orig).target()]._cb->OnMsg(orr);
+			orr.commit();
 
 		}
 		catch (exception & ex) {
@@ -222,23 +222,23 @@ namespace plasma
 			OrderV2* sts = lookup(req.orderId(), req.clOrdId());
 			if (sts == nullptr) {
 				//https://www.onixs.biz/fix-dictionary/4.4/app_dG.1.a.html
-				Wrap<ExecutionReport> rpt;
+				Wrap<ExecutionReport> rpt(*(xyz._cb));
 				rpt << req;
-				xyz._cb->OnMsg(rpt);
+				rpt.commit();
 				return;
 			}
 			// step: send the request out with correct sts object. 
 			// we found one publish status request.
 			// we need to do this only if ordStatus == NA
 			if (auto tgt = _out_os.find((*sts).target()); tgt != _out_os.end()) {
-				Wrap<OrderStatusRequest> osr(req);
+				Wrap<OrderStatusRequest> osr(*(tgt->second._cb), req);
 				osr.clOrdId(sts->_plsOrdId);
 				osr.orderId(sts->_dstOrdId);
-				tgt->second._cb->OnMsg(osr);
+				osr.commit();
 			}
-			Wrap<ExecutionReport> rpt;
+			Wrap<ExecutionReport> rpt(*(xyz._cb));
 			get_status(rpt, *sts);
-			xyz._cb->OnMsg(rpt);
+			rpt.commit();
 		}
 		catch (exception & ex) {
 
@@ -253,11 +253,11 @@ namespace plasma
 		ClientId clt(sts._srcOrdId);
 		if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
 		{
-			Wrap<ExecutionReport> exe(rpt);
+			Wrap<ExecutionReport> exe(*(itr->second._cb), rpt);
 			exe.origClOrdId(0);
 			exe.clOrdId(sts._srcOrdId);
 			exe.orderId(rpt.clOrdId());
-			itr->second._cb->OnMsg(exe);
+			exe.commit();
 		}
 		// propagate the fill to parent
 		if (rpt.lastQty() != 0) {
@@ -273,10 +273,10 @@ namespace plasma
 					// send status message out
 					ClientId clt(prnt->_srcOrdId);
 					if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end()) {
-						Wrap<ExecutionReport> exe;
+						Wrap<ExecutionReport> exe(*(itr->second._cb));
 						exe << (*prnt);
 						exe.execType(ExecType::Order_Status);
-						itr->second._cb->OnMsg(exe);
+						exe.commit();
 					}
 					prnt = prnt->isChild() ? _orders[prnt->_parent] : nullptr;
 				}
@@ -303,11 +303,11 @@ namespace plasma
 		ClientId clt(sts._srcOrdId);
 		if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
 		{
-			Wrap<ExecutionReport> exe(rpt);
+			Wrap<ExecutionReport> exe(*(itr->second._cb), rpt);
 			exe.origClOrdId(orig._srcOrdId);
 			exe.clOrdId(sts._srcOrdId);
 			exe.orderId(rpt.execType() == ExecType::Replace ? rpt.clOrdId() : rpt.origClOrdId());
-			itr->second._cb->OnMsg(exe);
+			exe.commit();
 		}
 		// adjust the qty.
 		if (rpt.execType() == ExecType::Canceled) {
@@ -320,10 +320,10 @@ namespace plasma
 					// send status message out
 					ClientId clt(prnt->_srcOrdId);
 					if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end()) {
-						Wrap<ExecutionReport> exe;
+						Wrap<ExecutionReport> exe(*(itr->second._cb));
 						exe << (*prnt);
 						exe.execType(ExecType::Order_Status);
-						itr->second._cb->OnMsg(exe);
+						exe.commit();
 					}
 					prnt = prnt->isChild() ? _orders[prnt->_parent] : nullptr;
 				}
@@ -345,9 +345,9 @@ namespace plasma
 			// check the Order exists
 			if (rpt.clOrdId() == 0 || rpt.clOrdId() > _orders.size()
 				|| (rpt.origClOrdId() != 0 && rpt.origClOrdId() > _orders.size())) {
-				Wrap<DontKnowTrade> dkt;
+				Wrap<DontKnowTrade> dkt(*in);
 				dkt << rpt;
-				(*in).OnMsg(dkt);
+				dkt.commit();
 				return;
 			}
 			OrderV2* orig = (rpt.origClOrdId() != 0) ? _orders[rpt.origClOrdId()] : nullptr;
@@ -375,12 +375,12 @@ namespace plasma
 			ClientId clt(prnt->_srcOrdId);
 			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
 			{
-				Wrap<ExecutionReport> exe;
+				Wrap<ExecutionReport> exe(*(itr->second._cb));
 				exe << (*prnt);
 				exe.execType(ExecType::Trade);
 				exe.lastPx(rpt.lastPx());
 				exe.lastQty(rpt.lastQty());
-				itr->second._cb->OnMsg(exe);
+				exe.commit();
 			}
 			prnt = prnt->isChild() ? _orders[prnt->_parent] : nullptr;
 		}
@@ -411,11 +411,11 @@ namespace plasma
 			ClientId clt(orig->_srcOrdId);
 			if (auto itr = _out_os.find(clt.instance()); itr != _out_os.end())
 			{
-				Wrap<OrderCancelReject> ocr(rpt);
+				Wrap<OrderCancelReject> ocr(*(itr->second._cb), rpt);
 				ocr.clOrdId(sts->_srcOrdId);
 				ocr.origClOrdId(orig->_srcOrdId);
 				ocr.orderId(orig->_plsOrdId);
-				itr->second._cb->OnMsg(ocr);
+				ocr.commit();
 			}
 			// TODO: if the replace is rejected. and the sliced qty has to be adjusted
 		}
