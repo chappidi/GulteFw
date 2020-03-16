@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <tsc.h>
+#include <thread>
 
 struct TestQEP : public testing::Test
 {
@@ -59,6 +60,19 @@ TEST_F(TestQEP, PRINT) {
 }
 ///////////////////////////////////////////////////////////
 //
+TEST_F(TestQEP, tsc_system_clock) {
+	const uint64_t cpu_freq = 2994370145;
+	// warm up
+	tsc::system_clock::now(cpu_freq);
+	// sleep 
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+
+	// check values
+	std::cout << tsc::system_clock::now(cpu_freq) << std::endl;
+	std::cout << std::chrono::system_clock::now() << std::endl;
+}
+///////////////////////////////////////////////////////////
+//
 TEST_F(TestQEP, TSC) {
 	auto test_single_sys = []() {
 		auto start = tsc::steady_clock::tick();
@@ -73,8 +87,9 @@ TEST_F(TestQEP, TSC) {
 		return (end - start);
 	};
 	auto tsc_single_sys = []() {
+		const uint64_t cpu_freq = 2994370145;
 		auto start = tsc::steady_clock::tick();
-		auto tmp = tsc::system_clock::now();
+		auto tmp = tsc::system_clock::now(cpu_freq);
 		auto end = tsc::steady_clock::tick();
 		return (end - start);
 	};

@@ -1,13 +1,14 @@
 #pragma once
-#include <atomic>
-#include <future>
+#include <chrono>
+//#include <atomic>
+//#include <future>
 namespace tsc
 {
 	struct cpu_info final {
 		using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 		// variables
-		inline static const time_point hrc_start = std::chrono::steady_clock::now();
-		inline static const std::uint64_t tsc_start = __rdtsc();
+		inline static const time_point	hrc_start = std::chrono::steady_clock::now();
+		inline static const uint64_t	tsc_start = __rdtsc();
 
 		///////////////////////////////////////////////////////
 		// This works for intel only

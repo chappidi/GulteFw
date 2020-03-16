@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <tsc.h>
+#include <thread>
 
 struct SpeedTest : public testing::Test
 {
@@ -57,13 +58,14 @@ TEST_F(SpeedTest, speed_system_clock) {
 TEST_F(SpeedTest, speed_tsc_system_clock) {
 	// get cpu freq
 	std::this_thread::sleep_for(std::chrono::seconds(1));
+//	const uint64_t cpu_freq = 2994370145;
 	auto cpu_freq = tsc::cpu_info::freq();
 
 	const int LOOP_SIZE = 5000000;
 	std::cout << "Running for 5 seconds..." << std::endl;
 
 	// ticks in cpu cycles
-	auto begin = tsc::system_clock::now();
+	auto begin = tsc::system_clock::now(cpu_freq);
 	auto last = begin;
 
 	long duration = 0;
@@ -71,7 +73,7 @@ TEST_F(SpeedTest, speed_tsc_system_clock) {
 	long unique = 0;
 	while (duration < 5000000) {
 		// ticks in cpu cycles
-		auto end = tsc::system_clock::now();
+		auto end = tsc::system_clock::now(cpu_freq);
 		if (last != end) {
 			unique++;
 			last = end;
@@ -79,7 +81,7 @@ TEST_F(SpeedTest, speed_tsc_system_clock) {
 		counter++;
 		duration = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 	}
-	auto end = tsc::system_clock::now();
+	auto end = tsc::system_clock::now(cpu_freq);
 	duration = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 	std::cout << "iterations :" << counter
 		<< "\n\tunique values :" << unique

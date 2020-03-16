@@ -43,21 +43,24 @@ namespace tsc
 	///////////////////////////////////////////////////////////////////////////////////////	
 	// replacement for std::chrono::system_clock if it is faster
 	struct system_clock {
-		inline static auto now() {
-			const uint64_t freq = 2994370145;
+		inline static auto now(uint64_t cpu_freq) {
+			constexpr uint64_t NSF = 1000000000;
 			thread_local auto ts = std::chrono::system_clock::now();
 			thread_local auto tk = tsc::steady_clock::tick();
-//			thread_local auto tk = std::chrono::nanoseconds(tsc::steady_clock::tick() / freq);
 
 			auto tmp = tsc::steady_clock::tick();
-			auto x = std::chrono::nanoseconds(((tmp - tk) * 1000,000,000) / freq);
+			auto x = std::chrono::nanoseconds(((tmp - tk) * NSF) / cpu_freq);
+			auto y = std::chrono::duration_cast<std::chrono::system_clock::duration>(x);
 
-			// adjust the drift every 1 sec
-			if (x.count() > 1000000000) {
+			//// adjust the drift every 100 sec
+			if (y.count() > NSF) {
+				tk = tsc::steady_clock::tick();
 				ts = std::chrono::system_clock::now();
-				tk = tmp;
+				return ts;
 			}
-			return ts + x;
+			else {
+				return ts + y;
+			}
 		}
 	};
 	///////////////////////////////////////////////////////////////////////////////////////
