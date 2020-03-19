@@ -1,0 +1,12 @@
+include(ExternalProject)
+
+#set(Boost_INCLUDE_DIR "D:/3RD_PARTY/boost_1_72_0")
+#set(Boost_LIBRARY_DIR "D:/3RD_PARTY/boost_1_72_0/stage/lib")
+set(BOOST_ROOT "D:/3RD_PARTY/boost_1_72_0")
+set(Boost_USE_STATIC_LIBS		ON)
+set(Boost_USE_DEBUG_LIBS		OFF)
+set(Boost_USE_RELEASE_LIBS		ON)
+set(Boost_USE_MULTITHREADED		ON)
+set(Boost_USE_STATIC_RUNTIME	OFF)
+find_package(Boost 1.72.0 REQUIRED COMPONENTS system thread fiber fiber_numa program_options filesystem regex)
+include_directories(${Boost_INCLUDE_DIRS})
