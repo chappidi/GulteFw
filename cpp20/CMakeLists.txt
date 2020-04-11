@@ -1,0 +1,20 @@
+﻿cmake_minimum_required (VERSION 3.15 FATAL_ERROR)
+project ("cpp20" CXX)
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    add_compile_options("/experimental:module")
+	add_compile_options("/std:c++latest")
+endif()
+
+#set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+include(cmake/googletest.cmake)
+fetch_googletest(
+    ${PROJECT_SOURCE_DIR}/cmake
+    ${PROJECT_BINARY_DIR}/googletest
+    )
+
+# Include sub-projects.
+enable_testing()
+add_subdirectory ("coroutine")
