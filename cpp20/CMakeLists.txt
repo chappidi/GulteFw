@@ -1,7 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.15 FATAL_ERROR)
 project ("cpp20" CXX)
 if (MSVC_VERSION GREATER_EQUAL "1900")
-    add_compile_options("/experimental:module")
 	add_compile_options("/std:c++latest")
 endif()
 
@@ -16,5 +15,6 @@ fetch_googletest(
     )
 
 # Include sub-projects.
+add_subdirectory ("modules")
 enable_testing()
 add_subdirectory ("coroutine")

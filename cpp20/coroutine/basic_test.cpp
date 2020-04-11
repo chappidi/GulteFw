@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iostream>
 #include <experimental/generator>
+#include <compare>
 
 struct BasicTest : public testing::Test
 {
@@ -42,4 +43,12 @@ TEST_F(BasicTest, coyield_2)
     {
         printf("%d\n", i);
     }
+}
+
+TEST_F(BasicTest, spaceship_op) {
+
+    int a = 4;
+    int b = 5;
+    auto flag = ((a <=> b) == 0);
+    std::cout << flag << std::endl;
 }
