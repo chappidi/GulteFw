@@ -165,3 +165,63 @@ TEST_F(AlignTest, perf_test_3) {
 	auto end = __rdtsc();
 	std::cout << "THREAD " << (end - begin) / cpu_freq << std::endl;
 }
+
+template<typename T>
+constexpr bool isCacheLineAligned() {
+	return alignof(T) % 64 == 0 || alignof(T) == 8 || alignog(T) == 16;
+}
+template<typename T>
+struct alignas(64) CLAlign : T {
+
+};
+
+TEST_F(AlignTest, abc_abc) {
+	struct S {
+		char a; // size: 1, alignment: 1
+		char b; // size: 1, alignment: 1
+	}; // size: 2, alignment: 1
+
+	// objects of type X must be allocated at 4-byte boundaries
+	// because X.n must be allocated at 4-byte boundaries
+	// because int's alignment requirement is (usually) 4
+	struct X {
+		int n;  // size: 4, alignment: 4
+		char c; // size: 1, alignment: 1
+		// three bytes padding
+	}; // size: 8, alignment: 4 
+
+	std::cout << "sizeof(S) = " << sizeof(S) << " alignof(S) = " << alignof(S) << '\n';
+	std::cout << "sizeof(X) = " << sizeof(X) << " alignof(X) = " << alignof(X) << '\n';
+	std::cout << "sizeof(CLAlign<X>) = " << sizeof(CLAlign<X>) << " alignof(CLAlign<X>) = " << alignof(CLAlign<X>) << '\n';
+}
+
+template <typename T>
+void buf_read(void* buf, short sz)
+{
+	T* ptr = (T*)buf;
+	T* ptrEnd = ptr + sz;
+
+	while (ptr != ptrEnd) {
+		*ptr++ = -*ptr;
+	}
+}
+
+TEST_F(AlignTest, align_abc) {
+	char* buf = new char[800000];
+	{
+		auto begin = __rdtsc();
+		for (int i = 0; i < 1000000; ++i) {
+			buf_read<long long>(buf, 200000);
+		}
+		auto end = __rdtsc();
+		std::cout << "ALIGNED " << (end - begin) / cpu_freq << std::endl;
+	}
+	{
+		auto begin = __rdtsc();
+		for (int i = 0; i < 1000000; ++i) {
+			buf_read<long long>(buf + 2, 200000);
+		}
+		auto end = __rdtsc();
+		std::cout << "MIS ALIGNED (2X) " << (end - begin) / cpu_freq << std::endl;
+	}
+}

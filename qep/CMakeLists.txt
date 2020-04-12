@@ -19,6 +19,7 @@ fetch_googletest(
 
 # Include sub-projects.
 add_subdirectory ("base_freq")
+add_subdirectory ("lock_test")
 enable_testing()
 add_subdirectory ("test")
 add_subdirectory ("fiber")

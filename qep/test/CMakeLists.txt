@@ -5,6 +5,8 @@ add_executable( qep_unit_test
 	align_test.cpp
 	race_test.cpp
 	lock_test.cpp
+	exception_test.cpp
+	stack_test.cpp
 	)
 target_link_libraries(qep_unit_test gtest_main base_freq)
 
