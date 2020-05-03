@@ -1,4 +1,4 @@
-﻿set(SBE_JAR ${CMAKE_CURRENT_SOURCE_DIR}/../../sbe-tool-all.jar)
+﻿set(SBE_JAR ${CMAKE_CURRENT_SOURCE_DIR}/../../sbe-all-1.17.0.jar)
 set(SBE_SCHEMA ${CMAKE_CURRENT_SOURCE_DIR}/plasma-schema.xml)
 
 add_custom_target(GEN_HDR
